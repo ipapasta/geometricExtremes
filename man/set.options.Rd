@@ -6,7 +6,6 @@
 \usage{
 set.options(
   X,
-  data.nm = "",
   excess.dist.fam,
   W.model,
   W.data,
@@ -28,8 +27,6 @@ set.options(
 }
 \arguments{
 \item{X}{n by d observations matrix.}
-
-\item{data.nm}{Name given to data for saving and book keeping.}
 
 \item{excess.dist.fam}{Exponential ("E") or generalised Pareto ("GP") excesses.}
 
@@ -74,7 +71,6 @@ Set options used by functions fit_Qq and fit_GL
 \examples{
 X <- rmutil::qlaplace(cbind(runif(1000),runif(1000),runif(1000)))
 options <- set.options(X                = X,
-                       data.nm          = "Indep_Laplace",
                        excess.dist.fam  = "E",
                        W.data           = "ExcOnly",
                        W.model          = "M3",

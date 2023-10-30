@@ -1,7 +1,6 @@
 #' Set options used by functions fit_Qq and fit_GL
 #'
 #' @param X n by d observations matrix.
-#' @param data.nm Name given to data for saving and book keeping.
 #' @param excess.dist.fam Exponential ("E") or generalised Pareto ("GP") excesses.
 #' @param W.model "M1", "M2", or "M3", as indicated in Papastathopoulos et al. (2023).
 #' @param W.data Angles to include in likelihood: all angles ("AllW") or only those of exceedances of Q_q ("ExcOnly").
@@ -26,7 +25,6 @@
 #' @examples
 #' X <- rmutil::qlaplace(cbind(runif(1000),runif(1000),runif(1000)))
 #' options <- set.options(X                = X,
-#'                        data.nm          = "Indep_Laplace",
 #'                        excess.dist.fam  = "E",
 #'                        W.data           = "ExcOnly",
 #'                        W.model          = "M3",
@@ -44,7 +42,7 @@
 #'                        mesh.knots.2d    = seq(-pi,pi,by=pi/400),
 #'                        mesh.res.3d      = 20,
 #'                        seed             = 0L)
-set.options <- function(X,data.nm="",excess.dist.fam,W.model,W.data,use.mean.Qq,q,alpha,N.Qq,N.GW,
+set.options <- function(X,excess.dist.fam,W.model,W.data,use.mean.Qq,q,alpha,N.Qq,N.GW,
                         QR.prior.range = c(1, 0.999),QR.prior.sigma   = c(1, 0.8),
                         zeta.prior.range = c(0.5, 0.999),zeta.prior.sigma = c(5, 0.8),
                         phi.prior.range  = c(0.5, 0.999),phi.prior.sigma  = c(5, 0.8),
@@ -124,8 +122,7 @@ set.options <- function(X,data.nm="",excess.dist.fam,W.model,W.data,use.mean.Qq,
     stop("X must be an n by d matrix with d=2 or d=3.")
   }
 
-  return(list(data.nm          = data.nm,
-              excess.dist.fam  = excess.dist.fam,
+  return(list(excess.dist.fam  = excess.dist.fam,
               W.model          = W.model,
               W.data           = W.data,
               use.mean.Qq      = use.mean.Qq,
@@ -161,7 +158,7 @@ set.options <- function(X,data.nm="",excess.dist.fam,W.model,W.data,use.mean.Qq,
 #'                       save      = TRUE,
 #'                       progress  = TRUE)
 set.configs <- function(save.path = "",
-                        file.nm   = paste0(options$data.nm,"_",options$excess.dist.fam,"_",options$W.model,"_",options$W.data),
+                        file.nm   = paste0("DataName","_",options$excess.dist.fam,"_",options$W.model,"_",options$W.data),
                         save      = FALSE,
                         progress  = FALSE){
   if(save==TRUE & save.path==""){
