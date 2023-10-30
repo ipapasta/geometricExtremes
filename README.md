@@ -61,7 +61,6 @@ X <- rmutil::qlaplace(pnorm(mvtnorm::rmvnorm(N.X, mu, Sigma),0,1))
 
 # Set fitting options, see ?set.options for description of variables
 options <- set.options(X                = X,
-                       data.nm          = "GaussCop_LaplaceMargins",
                        excess.dist.fam  = "E",
                        W.data           = "ExcOnly",
                        W.model          = "M3",
@@ -80,7 +79,7 @@ options <- set.options(X                = X,
 
 # Set fitting configurations
 config <- set.configs(save.path = "path/to/output/folder/", # Path of folder to save fitted objects if save == T
-                      file.nm   = paste0(options$data.nm,"_",
+                      file.nm   = paste0("GaussCop_LapMargins_",
 		                         options$excess.dist.fam,"_",
 					 options$W.model,"_",
 					 options$W.data),
@@ -162,8 +161,7 @@ X <- rmutil::qlaplace(pnorm(rmvnorm(5000, mu, Sigma),0,1))
 ### Model fitting ###
 #####################
 
-options <- set.options(X                = X,
-                       data.nm          = "Gauss",               
+options <- set.options(X                = X,               
                        excess.dist.fam  = "E",       
                        W.data           = "ExcOnly",                
                        W.model          = "M3",    
@@ -183,7 +181,7 @@ options <- set.options(X                = X,
 
 
 config <- set.configs(save.path = "path/to/folder/",
-                      file.nm   = paste0(options$data.nm,"_",options$excess.dist.fam,"_",options$W.model,"_",options$W.data),
+                      file.nm   = paste0("GaussCop3d_LapMargins_",options$excess.dist.fam,"_",options$W.model,"_",options$W.data),
                       save      = FALSE,
                       progress  = FALSE)
 
