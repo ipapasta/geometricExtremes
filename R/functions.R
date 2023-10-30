@@ -77,9 +77,6 @@ set.options <- function(X,excess.dist.fam,W.model,W.data,use.mean.Qq,q,alpha,N.Q
   if(missing(q)){
     stop("Specify value of q in (0,1).")
   }
-  if(missing(alpha)){
-    stop("Specify value of alpha in (0,1).")
-  }
   if(missing(N.Qq)){
     stop("Specify value of N.Qq.")
   }
@@ -112,7 +109,11 @@ set.options <- function(X,excess.dist.fam,W.model,W.data,use.mean.Qq,q,alpha,N.Q
     }else if(min(mesh.knots.2d)< -pi){
       stop("mesh.knots.2d must take values in [-pi,pi].")
     }
+    alpha <- NA
   }else if(ncol(X)==3){
+    if(missing(alpha)){
+      stop("Specify value of alpha in (0,1).")
+    }
     if(missing(mesh.res.3d)){
       stop("Specify value of mesh.res.3d.")
     }else if(mesh.res.3d<1){
