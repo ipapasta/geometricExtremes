@@ -1,0 +1,23 @@
+Package: geometricExtremes
+Title: What the Package Does (One Line, Title Case)
+Version: 0.0.0.9000
+Authors@R: 
+    c(person(given ="Lambert", 
+             family = "De Monte", 
+             email="l.demonte@ed.ac.uk", 
+             role = c("aut", "cre")),
+      person(given ="Ioannis",
+             family = "Papastathopoulos",
+             email="l.demonte@ed.ac.uk", 
+             role = c("aut")),
+      person(given ="Ryan",
+             family = "Campbell",
+             email="r.campbell3@lancaster.ac.uk", 
+             role = c("aut")))
+Description: What the package does (one paragraph).
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Imports:
+    INLA, inlabru, pracma, excursions, rmutil, stats, rgl, sp, evd
