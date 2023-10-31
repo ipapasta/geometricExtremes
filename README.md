@@ -45,14 +45,10 @@ X <- toLaplaceMargins(X.N,q)
 
 ### Model fitting
 
+The model fitting procedure involves specifying options and saving configurations respectively through the functions set.options and set.configs.
+
 ``` r 
 library(geometricExtremes)
-
-# Sample from a bivariate Gaussian copula in Laplace margins
-set.seed(44)
-mu <- c(0,0)
-Sigma <- rbind(c(1,0.8), c(0.8,1))
-X <- rmutil::qlaplace(pnorm(mvtnorm::rmvnorm(N.X, mu, Sigma),0,1))
 
 # Set fitting options, see ?set.options for description of variables
 options <- set.options(X                = X,
@@ -79,7 +75,10 @@ config <- set.configs(save.path = "path/to/output/folder/", # Path of folder to 
 					 options$W.data),
                       save      = TRUE, # Save fitted objects to save.path if save == T
                       progress  = TRUE) # Save progression in .txt file in save.path if progress == T
+```
+To obtain posterior realisations from $`\mathcal{Q}_q`$ and $`\mathcal{G}`$, one simply runs:
 
+``` r
 # Fit the quantile set Q_q
 fitted.Qq <- fit_Qq(X,options,config,return_fitted_obj=F)
 
