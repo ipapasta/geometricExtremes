@@ -1,26 +1,6 @@
-# Geometric multivariate extreme value analysis 
+# Example 2D
 
-> A Bayesian approach to geometric extreme value analysis based on:
->
-> I. Papastathopoulos, L. De Monte, R. Campbell, and H. Rue. (2023) 'Statistical inference for radially-stable generalized Pareto distributions and return level-sets in geometric extremes', [arXiv](https://arxiv.org/abs/2310.06130) preprint.
-
-<p align="center"><img src="/figures/GaussCop_LapMargins.gif" width="60%" height="60%"/> </p>
-
-
-
-## Installation
-``` r
-# install.packages("remotes")
-remotes::install_github("ipapasta/geometricExtremes")
-```
-
-## Reporting a bug
-
-Please report any bugs or comments by email to l.demonte@ed.ac.uk.
-
-## Example 2D
-
-### Simulated data and transformation to Laplace marginal distributions
+## Simulated data and transformation to Laplace marginal distributions
 
 ``` r
 rm(list=ls())
@@ -49,7 +29,7 @@ q <- rbind(c(0.90,0.90),
 X <- toLaplaceMargins(X.N,q)
 ```
 
-### Model fitting
+## Model fitting
 
 The model fitting procedure involves specifying options and saving configurations respectively through the functions set.options and set.configs.
 
@@ -101,7 +81,7 @@ plot_G(fitted.mod,by=4)
 
 <p align="center"><img src="/figures/Plot_Qq_G.png" width="70%" height="70%"/> </p>
 
-### Probability estimation
+## Probability estimation
 
 ``` r
 # Define rectangular region of interest
@@ -117,7 +97,7 @@ ps <- prob_estimation(fitted.mod,post.samp,x_B,y_B)
 median(ps[,2])
 ```
 
-### Return level-sets estimation
+## Return level-sets estimation
 
 ``` r
 par(mfrow=c(1,2),mar=c(2,2,0,0),mgp=c(2.6,0.8,0),pty="s")
@@ -129,9 +109,9 @@ plot_X_t(fitted.mod,list_ret_sets,plt="set",xylim=c(-10,10))
 <p align="center"><img src="/figures/Ret_sets.png" width="70%" height="70%"/> </p>
 
 
-### Measures of extremal dependence
+## Measures of extremal dependence
 
-#### Conditional Extremes parameter $`\alpha`$
+### Conditional Extremes parameter $`\alpha`$
 
 Below is a function to obtain posterior samples from the Conditional Extremes parameter $`\alpha`$.
 
@@ -141,7 +121,7 @@ mean(alphas[,1])
 mean(alphas[,2])
 ```
 
-#### Coefficient of residual tail dependence $`\eta`$
+### Coefficient of residual tail dependence $`\eta`$
 
 Below is a function to obtain posterior samples from the coefficient of residual tail dependence $`\eta`$.
 
@@ -150,7 +130,7 @@ etas <- eta_posterior(fitted.mod)
 mean(etas)
 ```
 
-## Example 3D
+# Example 3D
 ``` r
 rm(list=ls())
 library(mvtnorm)
