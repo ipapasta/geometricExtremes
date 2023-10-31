@@ -16,7 +16,7 @@ remotes::install_github("ipapasta/geometricExtremes")
 
 ## Examples
 
-Examples and functionality explanations are found here.
+Examples and functionality explanations are found [here](EXAMPLES.md).
 
 ## Reporting a bug
 
