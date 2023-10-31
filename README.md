@@ -35,7 +35,7 @@ I. Papastathopoulos, L. De Monte, R. Campbell, and H. Rue. (2023) 'Statistical i
 
 <div id="ref-BolinLindgren2018" class="csl-entry">
 
-Bolin D, Lindgren F (2018). 'Calculating Probabilistic Excursion Sets and Related Quantities Using excursions.' Journal of Statistical Software, 86(5), 1–20. <doi:10.18637/jss.v086.i05>.
+Bolin D, Lindgren F (2018). 'Calculating Probabilistic Excursion Sets and Related Quantities Using excursions.' Journal of Statistical Software, 86(5), 1–20. <https://doi:10.18637/jss.v086.i05>.
 
 </div>
 
