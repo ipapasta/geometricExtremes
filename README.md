@@ -123,7 +123,9 @@ plot_X_t(fitted.mod,list_ret_sets,plt="set",xylim=c(-10,10))
 <p align="center"><img src="/figures/Ret_sets.png" width="70%" height="70%"/> </p>
 
 
-### Extremal coefficient estimation
+### Measures of extremal dependence
+
+#### Conditional Extremes parameter $`\alpha`$
 
 Below is a function to obtain posterior samples from the Conditional Extremes parameter $`\alpha`$.
 
@@ -132,6 +134,8 @@ alphas <- alpha_posterior(fitted.mod)
 mean(alphas[,1])
 mean(alphas[,2])
 ```
+
+#### Coefficient of residual tail dependence $`\eta`$
 
 Below is a function to obtain posterior samples from the coefficient of residual tail dependence $`\eta`$.
 
