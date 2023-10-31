@@ -13,6 +13,11 @@
 # install.packages("remotes")
 remotes::install_github("ipapasta/geometricExtremes")
 ```
+
+## Reporting a bug
+
+Please report any bugs or comments by email to l.demonte@ed.ac.uk.
+
 ## Example 2D
 
 ### Simulated data and transformation to Laplace marginal distributions
