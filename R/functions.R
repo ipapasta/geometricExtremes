@@ -58,7 +58,7 @@ set.options <- function(X,excess.dist.fam,W.model,W.data,use.mean.Qq,q,alpha,N.Q
   }
 
   if(excess.dist.fam=="GP"){
-    # stop("Functionality available very soon.")
+    stop("Functionality available very soon.")
     if(missing(alpha)){
       stop("Specify value of alpha in (0,1).")
     }
