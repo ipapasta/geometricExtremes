@@ -29,19 +29,19 @@ line-spacing="2">
 
 <div id="ref-Papastathopoulos2023" class="csl-entry">
 
-Papastathopoulos, I., De Monte, L., Campbell, R. and Rue, L. (2023) Statistical inference for radially-stable generalized Pareto distributions and return level-sets in geometric extremes, arXiv preprint. <https://arxiv.org/abs/2310.06130> 
+Papastathopoulos, I., De Monte, L., Campbell, R. and Rue, L. (2023) Statistical inference for radially-stable generalized Pareto distributions and return level-sets in geometric extremes, arXiv preprint. <https://arxiv.org/abs/2310.06130>. 
 
 </div>
 
 <div id="ref-Rueetal2009" class="csl-entry">
 
-Rue, H., Martino, S. and Chopin, N. (2009), Approximate Bayesian inference for latent Gaussian models by using integrated nested Laplace approximations. Journal of the Royal Statistical Society: Series B (Statistical Methodology), 71: 319-392. <https://doi.org/10.1111/j.1467-9868.2008.00700.x>
+Rue, H., Martino, S. and Chopin, N. (2009), Approximate Bayesian inference for latent Gaussian models by using integrated nested Laplace approximations. Journal of the Royal Statistical Society: Series B (Statistical Methodology), 71: 319-392. <https://doi.org/10.1111/j.1467-9868.2008.00700.x>.
 
 </div>
 
 <div id="ref-BachletAl2019" class="csl-entry">
 
-Bachl F, Lindgren F, Borchers D, Illian J (2019). inlabru: an R package for Bayesian spatial modelling from ecological survey data. Methods in Ecology and Evolution, 10, 760–766.
+Bachl F, Lindgren F, Borchers D, Illian J (2019). inlabru: an R package for Bayesian spatial modelling from ecological survey data. Methods in Ecology and Evolution, 10, 760–766. <https://doi.org/10.1111/2041-210X.13168>.
 
 </div>
 
