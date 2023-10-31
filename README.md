@@ -32,7 +32,8 @@ library(geometricExtremes)
 set.seed(44)
 N.X <- 5000
 mu <- c(0,0)
-Sigma <- rbind(c(1,0.8), c(0.8,1))
+Sigma <- rbind(c(1,0.8),
+               c(0.8,1))
 
 X.N <- rmvnorm(N.X, mu, Sigma)
 ``` 
