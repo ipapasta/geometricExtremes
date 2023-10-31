@@ -27,9 +27,16 @@ Please report any bugs or comments by email to l.demonte@ed.ac.uk.
 <div id="refs" class="references csl-bib-body hanging-indent"
 line-spacing="2">
 
-<div id="ref-asadi2015" class="csl-entry">
+<div id="ref-Papastathopoulos2023" class="csl-entry">
 
 I. Papastathopoulos, L. De Monte, R. Campbell, and H. Rue. (2023) 'Statistical inference for radially-stable generalized Pareto distributions and return level-sets in geometric extremes', arXiv preprint. <https://arxiv.org/abs/2310.06130> 
 
 </div>
 
+<div id="ref-BolinLindgren2018" class="csl-entry">
+
+Bolin D, Lindgren F (2018). 'Calculating Probabilistic Excursion Sets and Related Quantities Using excursions.' Journal of Statistical Software, 86(5), 1–20. <doi:10.18637/jss.v086.i05>.
+
+</div>
+
+</div>
