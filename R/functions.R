@@ -58,7 +58,7 @@ set.options <- function(X,excess.dist.fam,W.model,W.data,use.mean.Qq,q,alpha,N.Q
   }
 
   if(excess.dist.fam=="GP"){
-    stop("Functionality available very soon.")
+    # stop("Functionality available very soon.")
     if(missing(alpha)){
       stop("Specify value of alpha in (0,1).")
     }
@@ -576,7 +576,7 @@ plot_G <- function(fitted.mod,alpha=0.05,surface3d="mean",surf.col="grey",cex.pt
 #'
 #' @param fitted.mod Object returned by the function fit_GL.
 #' @param alpha Value in (0,1) for the (1-alpha)-simultaneous predictive interval of W.
-#' @param xylim Plotting range on the x and y axes.
+#' @param f_W.lim Plotting range of the image of the density f_W.
 #' @param main Title of figure.
 #' @param mid.gap Radius of the middle circle of zero density.
 #' @param txt.gap Gap between angle marks and axes' lines.
@@ -587,9 +587,9 @@ plot_G <- function(fitted.mod,alpha=0.05,surface3d="mean",surf.col="grey",cex.pt
 #' @export
 #'
 #' @examples
-plot_W <- function(fitted.mod,alpha=0.05,xylim,main="",mid.gap=0.1, txt.gap=0.02,cex.txt=1.4,exconly=FALSE){
+plot_W <- function(fitted.mod,alpha=0.05,f_W.lim=0,main="",mid.gap=0.1, txt.gap=0.02,cex.txt=1.4,exconly=FALSE){
   if(ncol(fitted.mod$X)==2){
-    plot_W_2d(fitted.mod,alpha,xylim,main="",mid.gap=0.1, txt.gap=0.02,cex.txt=1.4,exconly=exconly)
+    plot_W_2d(fitted.mod,alpha,f_W.lim,main="",mid.gap=mid.gap, txt.gap=txt.gap,cex.txt=cex.txt,exconly=exconly)
   }else if(ncol(fitted.mod$X)==3){
     return("Currently not implemented for 3d.")
   }

@@ -7,7 +7,7 @@
 plot_W(
   fitted.mod,
   alpha = 0.05,
-  xylim,
+  f_W.lim = 0,
   main = "",
   mid.gap = 0.1,
   txt.gap = 0.02,
@@ -20,7 +20,7 @@ plot_W(
 
 \item{alpha}{Value in (0,1) for the (1-alpha)-simultaneous predictive interval of W.}
 
-\item{xylim}{Plotting range on the x and y axes.}
+\item{f_W.lim}{Plotting range of the image of the density f_W.}
 
 \item{main}{Title of figure.}
 

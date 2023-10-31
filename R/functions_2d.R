@@ -39,7 +39,7 @@ fit_Qq_2d <- function(X,options,config,return_fitted_obj=F){
   fit.Qq <- bru(cmp.Qq,
                 data = as.data.frame(dfRW),
                 family="gamma",
-                options=list(num.threads=10, verbose = FALSE, safe=TRUE),
+                options=list(num.threads=8, verbose = FALSE, safe=TRUE),
                 control.family = list(control.link = list(model="quantile", quantile=options$q)))
 
   Qq.post.samp <- generate(n.samples = options$N.Qq,
@@ -231,7 +231,7 @@ fit_GL_2d <- function(fitted.Qq,config){
 
     fit_GW <- bru(cmp.GW, lik_W, lik_G,
                   options = list(bru_max_iter = 1,
-                                 num.threads=10,
+                                 num.threads=8,
                                  verbose = FALSE))
 
     # Generate intensities and g
@@ -1146,48 +1146,6 @@ plot_G_2d <- function(fitted.mod,alpha,mean_med="mean",cex.txt=1.4,cex.pts=0.6,t
 #'
 #' @examples
 plot_W_2d <- function(fitted.mod,alpha,xylim,main="",mid.gap=0.1, txt.gap=0.02,cex.txt=1.4,exconly=F){
-  mesh <- fitted.mod$mesh$loc
-  m <- matrix(NA,length(fitted.mod$g)*length(fitted.mod$g[[1]]),length(mesh))
-  cnt <- 1
-  for(i in 1:length(fitted.mod$g)){
-    for(j in 1:length(fitted.mod$g[[1]])){
-      f_W <- exp(fitted.mod$log.L[[i]][[j]])
-      intt <- numer_int(f_W,mesh)
-      m[cnt,] <- f_W/intt
-      cnt <- cnt + 1
-    }
-  }
-
-  low <- pol2cart(cbind(mesh,apply(m,2,quantile,probs=c(0.025))+mid.gap))
-  up <- pol2cart(cbind(mesh,apply(m,2,quantile,probs=c(0.975))+mid.gap))
-
-  excurs <- simconf.mc(samples = t(m),alpha = 1-alpha)
-  low <- pol2cart(cbind(mesh,excurs$a+mid.gap))
-  up <- pol2cart(cbind(mesh,excurs$b+mid.gap))
-
-  plot(NA,NA,xlim=c(-xylim-0.05-mid.gap,xylim+0.05+mid.gap),
-       ylim=c(-xylim-0.05-mid.gap,xylim+0.05+mid.gap),
-       xaxt='n',yaxt='n',bty="n",xlab="",ylab="")
-  title(main,line=-1)
-
-  col <- col2rgb("grey30")/255
-  polygon(up,col=rgb(col[1], col[2], col[3], alpha = 0.3),
-          border=rgb(col[1], col[2], col[3], alpha = 0.3))
-  polygon(low,col=rgb(1,1,1),border=rgb(col[1], col[2], col[3], alpha = 0.3))
-
-  ws <- c(seq(-pi,pi,by=0.001),-pi)
-  for(i in 1:floor(xylim*10)){
-    if(i==1){
-      col <- "black"
-    }else{
-      col<-"lightgrey"
-    }
-    lines(i*cos(ws)/10,i*sin(ws)/10,col=col,lwd=0.7)
-  }
-  lines(c(-xylim,xylim),c(0,0),col="black")
-  lines(c(0,0),c(-xylim,xylim),col="black")
-  text(c(-xylim-txt.gap,xylim+txt.gap,0,0),c(0,0,-xylim-0.005-txt.gap,xylim+0.005+txt.gap),cex=cex.txt,
-       c(expression(pi),0,expression(3*pi/2),expression(pi/2)),col="black")
 
   X <- fitted.mod$X
   R <- apply(X, 1, function(x) sqrt(sum(x^2)))
@@ -1201,7 +1159,59 @@ plot_W_2d <- function(fitted.mod,alpha,xylim,main="",mid.gap=0.1, txt.gap=0.02,c
     W <- atan2(y=X[,2], x=X[,1])
   }
 
-  h <- hist(W,freq = F,breaks=seq(-pi,pi,length.out=60),plot = F)
+  h <- hist(W,breaks=seq(-pi,pi,length.out=60),plot = F)
+
+  mesh <- fitted.mod$mesh$loc
+  m <- matrix(NA,length(fitted.mod$G)*length(fitted.mod$G[[1]]),length(mesh))
+  cnt <- 1
+  for(i in 1:length(fitted.mod$G)){
+    for(j in 1:length(fitted.mod$G[[1]])){
+      f_W <- exp(fitted.mod$log.L[[i]][[j]])
+      intt <- numer_int(f_W,mesh)
+      m[cnt,] <- f_W/intt
+      cnt <- cnt + 1
+    }
+  }
+
+  # low <- pol2cart(cbind(mesh,apply(m,2,quantile,probs=c(0.025))+mid.gap))
+  # up <- pol2cart(cbind(mesh,apply(m,2,quantile,probs=c(0.975))+mid.gap))
+
+  excurs <- simconf.mc(samples = t(m),alpha = 1-alpha)
+  low <- pol2cart(cbind(mesh,excurs$a+mid.gap))
+  up <- pol2cart(cbind(mesh,excurs$b+mid.gap))
+
+  if(xylim==0){
+    xylim <- max(c(excurs$b,h$density))
+  }
+
+  lines.gap <- 0.15
+  plot(NA,NA,xlim=c(-xylim-0.05-mid.gap-lines.gap,xylim+0.05+mid.gap+lines.gap),
+       ylim=c(-xylim-0.05-mid.gap-lines.gap,xylim+0.05+mid.gap+lines.gap),
+       xaxt='n',yaxt='n',bty="n",xlab="",ylab="")
+  title(main,line=-1)
+
+  col <- col2rgb("grey30")/255
+  polygon(up,col=rgb(col[1], col[2], col[3], alpha = 0.3),
+          border=rgb(col[1], col[2], col[3], alpha = 0.3))
+  polygon(low,col=rgb(1,1,1),border=rgb(col[1], col[2], col[3], alpha = 0.3))
+
+  ws <- c(seq(-pi,pi,by=0.001),-pi)
+  for(i in 1:ceiling(xylim*10)){
+    if(i==1){
+      col <- "black"
+    }else{
+      col<-"lightgrey"
+    }
+    lines(i*cos(ws)/10,i*sin(ws)/10,col=col,lwd=0.7)
+  }
+
+  lines(c(-xylim-lines.gap,xylim+lines.gap),c(0,0),col="black")
+  lines(c(0,0),c(-xylim-lines.gap,xylim+lines.gap),col="black")
+  text(c(-xylim-txt.gap-lines.gap,xylim+txt.gap+lines.gap,0,0),
+       c(0,0,-xylim-0.005-txt.gap-lines.gap,xylim+0.005+txt.gap+lines.gap),
+       cex=cex.txt,
+       c(expression(pi),0,expression(3*pi/2),expression(pi/2)),col="black")
+
   for(i in 1:length(h$density)){
     pt1 <- pol2cart(c(h$breaks[i],h$density[i]+mid.gap))
     pt2 <- pol2cart(c(h$breaks[i+1],h$density[i]+mid.gap))
