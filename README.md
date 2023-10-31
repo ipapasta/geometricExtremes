@@ -30,10 +30,9 @@ mu <- c(0,0)
 Sigma <- rbind(c(1,0.8), c(0.8,1))
 
 X.N <- rmvnorm(N.X, mu, Sigma)
-X.L <- rmutil::qlaplace(pnorm(X.N,0,1))
 ``` 
 
-Alternatively, when the marginal distributions of the vector $`\boldsymbol{X}`$ are unknown, one can use the $`\texttt{geometricExtremes}`$ function toLaplaceMargins as follows:
+Here, the marginal distributions of the vector $`\boldsymbol{X}_N`$ are known and so is the true transformation to Laplace margins. When the marginal distributions are unknown, one can use the $`\texttt{geometricExtremes}`$ function toLaplaceMargins as follows:
 
 ``` r
 # Upper/lower row of upper/lower quantiles above/below which to fit GPD tails
@@ -41,11 +40,7 @@ q <- rbind(c(0.90,0.90),
            c(0.10,0.10))
 
 # Perform transformation of marginal distributions of X.N to Laplace
-X.est.L <- toLaplaceMargins(X.N,q)
-
-# Comparison of true and estimated transformation
-plot(X.L[,1],X.est.L$X.L[,1])
-abline(a=0,b=1)
+X <- toLaplaceMargins(X.N,q)
 ```
 
 ### Model fitting
