@@ -9,9 +9,9 @@ return_set(fitted.mod, t = NA, q.prime = NA)
 \arguments{
 \item{fitted.mod}{Object returned from the function fit_GL.}
 
-\item{t}{Return period t <= 1/(1-q) for the return level-set X_t.}
+\item{t}{Vector of return periods t.prime <= 1/(1-q) for the return level-sets X_{t.prime}.}
 
-\item{q.prime}{Probability of the canonical return level-set level-set X_{1/(1-q)}.}
+\item{q.prime}{Vector of probabilities of the canonical return level-set level-sets X_{1/(1-q.prime)}.}
 }
 \value{
 Matrix of realisations from the radial function of the return level-set X_t.

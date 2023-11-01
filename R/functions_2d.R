@@ -475,6 +475,8 @@ sample_LGCP_fix <- function(n,log.L,fitted.mod,mesh,limits.W_B=NA){
 sample_QGW_posterior_2d <- function(fitted.mod,N.w,S_B=NA,transf.G=F){
 
   mesh <- fitted.mod$mesh
+  N.Qq <- length(fitted.mod$G)
+  N.GW <- length(fitted.mod$G[[1]])
 
   if(fitted.mod$options$excess.dist.fam=="E"){
     post.samp <- list(w     = list(),
@@ -489,8 +491,8 @@ sample_QGW_posterior_2d <- function(fitted.mod,N.w,S_B=NA,transf.G=F){
   }
 
   W_B    <- S_B
-  for(i in 1:fitted.mod$options$N.Qq){
-    message(paste0("Threshold ",i,"/",fitted.mod$options$N.Qq))
+  for(i in 1:N.Qq){
+    message(paste0("Sample W for threshold ",i,"/",N.Qq))
     samp.w <- lapply(fitted.mod$log.L[[i]],function(xx) sample_LGCP_fix(N.w,xx,fitted.mod,mesh,W_B))
 
     if(!inherits(S_B,"logical")){
@@ -507,7 +509,7 @@ sample_QGW_posterior_2d <- function(fitted.mod,N.w,S_B=NA,transf.G=F){
     }
 
     post.samp$Qq.at.w[[i]] <- list()
-    for(j in 1:fitted.mod$options$N.GW){
+    for(j in 1:N.GW){
       A <- inla.mesh.projector(mesh=mesh,loc=w[[j]])$proj$A
       if(fitted.mod$options$excess.dist.fam=="E"){
         if(transf.G==F){
@@ -573,9 +575,9 @@ prob_estimation_2d <- function(fitted.mod,post.sample,x,y){
   excess.dist.fam <- fitted.mod$options$excess.dist.fam
   x <- sort(x); y <- sort(y)
 
-  N.Qq        <- fitted.mod$options$N.Qq
-  N.GW <- fitted.mod$options$N.GW
-  X            <- fitted.mod$X
+  N.Qq <- length(fitted.mod$G)
+  N.GW <- length(fitted.mod$G[[1]])
+  X    <- fitted.mod$X
 
   R <- apply(X, 1, function(x) sqrt(sum(x^2)))
   W <- atan2(y=X[,2], x=X[,1])
