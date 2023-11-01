@@ -222,7 +222,7 @@ plot_W(fitted.mod)
 
 ``` r
 # Define rectangular region of interest
-x_B <- c(-15,10); y_B <- c(10,15)
+x_B <- c(-15,-10); y_B <- c(10,15)
 B <- expand.grid(x=x_B,y=y_B)
 S_B <- range(atan2(y=B[,2],x=B[,1]))
 
