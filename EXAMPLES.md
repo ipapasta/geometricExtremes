@@ -82,7 +82,7 @@ fitted.Qq <- fit_Qq(X$X.L,options,config,return_fitted_obj=F)
 # Fit the sets G and L
 fitted.mod <- fit_GL(fitted.Qq,config)
 ```
-Running the lines below will plot the estimated $`\mathcal{Q}_q`$ and $`\mathcal{G}`$ sets with simultaneous predictive intervals.
+Running the lines below will plot the estimated $`\mathcal{Q}_q`$, $`\mathcal{G}`$ and $`\mathcal{W}`$  sets with simultaneous predictive intervals.
 
 ``` r
 par(mfrow=c(1,3),mar=c(2,2,0,0),mgp=c(2.6,0.8,0),pty="s")
@@ -207,7 +207,7 @@ fitted.Qq <- fit_Qq(X.t,options,config,return_fitted_obj=F)
 # Fit the sets G and L
 fitted.mod <- fit_GL(fitted.Qq,config)
 ```
-Running the lines below will plot the estimated $`\mathcal{Q}_q`$ and $`\mathcal{G}`$ sets with simultaneous predictive intervals.
+Running the lines below will plot the estimated $`\mathcal{Q}_q`$, $`\mathcal{G}`$, and $`\mathcal{W}`$ sets with simultaneous predictive intervals.
 
 ``` r
 par(mfrow=c(1,3),mar=c(2,2,0,0),mgp=c(2.6,0.8,0),pty="s")
@@ -241,6 +241,8 @@ median(ps[,2])
 
 ## Exponential exceedances
 
+### Simulated data and transformation to Laplace marginal distributions
+
 ``` r
 rm(list=ls())
 library(mvtnorm)
@@ -249,11 +251,11 @@ library(rmutil)
 mu <- c(0,0,0)
 Sigma <- rbind(c(1,0.8,0.7), c(0.8,1,0.6),c(0.7,0.6,1))
 X <- rmutil::qlaplace(pnorm(rmvnorm(5000, mu, Sigma),0,1))
+```
 
-#####################
-### Model fitting ###
-#####################
+### Model fitting
 
+``` r
 options <- set.options(X                = X,               
                        excess.dist.fam  = "E",       
                        W.data           = "ExcOnly",                
@@ -276,7 +278,11 @@ config <- set.configs(save.path = "path/to/folder/",
                       file.nm   = paste0("GaussCop3d_LapMargins_",options$excess.dist.fam,"_",options$W.model,"_",options$W.data),
                       save      = FALSE,
                       progress  = FALSE)
+```
 
+To obtain posterior realisations from $`\mathcal{Q}_q`$ and $`\mathcal{G}`$, one runs:
+
+``` r
 fitted.Qq <- fit_Qq(X,options,config,return_fitted_obj=F)
 plot_Qq(fitted.Qq,cex.pts=0.4,cex.axis=1.4,xlim=c(-8,8),ylim=c(-8,8),by=4)
 
