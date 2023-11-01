@@ -46,8 +46,6 @@ X$X.L # Observed data transformed to Laplace margins
 The model fitting procedure involves specifying options and saving configurations respectively through the functions set.options and set.configs.
 
 ``` r 
-library(geometricExtremes)
-
 # Set fitting options, see ?set.options for description of variables
 options <- set.options(X                = X$X.L,
                        excess.dist.fam  = "E",
@@ -148,6 +146,22 @@ mean(etas)
 ## Generalised Pareto exceedances
 
 Available soon.
+
+``` r
+rm(list=ls())
+library(QRM)
+library(geometricExtremes)
+
+# Sample from a bivariate student-t copula in student-t margins
+set.seed(44)
+N.X <- 5000
+df <- 3
+Sigma <- rbind(c(1,-0.7),
+               c(-0.7,1))
+
+X.t <- qt(rcopula.t(N.X, df=df, Sigma=Sigma),df=df) # \boldsymbol{X}_t
+```
+
 
 <a id="3d"></a>
 
