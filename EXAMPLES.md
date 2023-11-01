@@ -5,7 +5,13 @@ This file contains example-code for running the main functions of the $`\texttt{
 <a id="2d"></a>
 # Example 2D
 
-## Simulated data and transformation to Laplace marginal distributions
+In this section, we detail how to perform Bayesian geometric inference for exceedances of $`\mathcal{Q}_q`$. The procedure to fit exponential exceedances is described [here](#2d-exp), and the one to fit generalised Pareto exceedances is described [here](#2d-GP).
+
+<a id="2d-exp"></a>
+
+## Exponential exceedances
+
+### Simulated data and transformation to Laplace marginal distributions
 
 ``` r
 rm(list=ls())
@@ -35,7 +41,7 @@ X <- toLaplaceMargins(X.N,q)
 X$X.L # Observed data transformed to Laplace margins
 ```
 
-## Model fitting
+### Model fitting
 
 The model fitting procedure involves specifying options and saving configurations respectively through the functions set.options and set.configs.
 
@@ -89,7 +95,7 @@ plot_W(fitted.mod)
 
 <p align="center"><img src="/figures/Plot_Qq_G_W.png" width="80%" height="80%"/> </p>
 
-## Probability estimation
+### Probability estimation
 
 ``` r
 # Define rectangular region of interest
@@ -105,7 +111,7 @@ ps <- prob_estimation(fitted.mod,post.samp,x_B,y_B)
 median(ps[,2])
 ```
 
-## Return level-sets estimation
+### Return level-sets estimation
 
 ``` r
 par(mfrow=c(1,2),mar=c(2,2,0,0),mgp=c(2.6,0.8,0),pty="s")
@@ -117,9 +123,9 @@ plot_X_t(fitted.mod,list_ret_sets,plt="set",xylim=c(-10,10))
 <p align="center"><img src="/figures/Ret_sets.png" width="70%" height="70%"/> </p>
 
 
-## Measures of extremal dependence
+### Measures of extremal dependence
 
-### Conditional Extremes parameter $`\alpha`$
+#### Conditional Extremes parameter $`\alpha`$
 
 Below is a function to obtain posterior samples from the Conditional Extremes parameter $`\alpha`$.
 
@@ -129,7 +135,7 @@ mean(alphas[,1])
 mean(alphas[,2])
 ```
 
-### Coefficient of residual tail dependence $`\eta`$
+#### Coefficient of residual tail dependence $`\eta`$
 
 Below is a function to obtain posterior samples from the coefficient of residual tail dependence $`\eta`$.
 
@@ -137,10 +143,18 @@ Below is a function to obtain posterior samples from the coefficient of residual
 etas <- eta_posterior(fitted.mod)
 mean(etas)
 ```
+<a id="2d-GP"></a>
+
+## Generalised Pareto exceedances
+
+Available soon.
 
 <a id="3d"></a>
 
 # Example 3D
+
+## Exponential exceedances
+
 ``` r
 rm(list=ls())
 library(mvtnorm)
@@ -183,4 +197,8 @@ plot_Qq(fitted.Qq,cex.pts=0.4,cex.axis=1.4,xlim=c(-8,8),ylim=c(-8,8),by=4)
 fitted.mod <- fit_GL(fitted.Qq,config)
 plot_G(fitted.mod,surface3d="mean",surf.col = "red")
 ```
+
+## Generalised Pareto exceedances
+
+Available soon.
 
