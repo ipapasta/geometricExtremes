@@ -18,7 +18,7 @@ remotes::install_github("ipapasta/geometricExtremes")
 
 Examples and explanations are found [here](EXAMPLES.md).
 
-## Citing $'\texttt{geometricExtremes}'$
+## Citing $`\texttt{geometricExtremes}`$
 
 Please cite this package using this [BibTeX](Citation.bib) file.
 
