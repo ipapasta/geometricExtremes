@@ -68,6 +68,7 @@ config <- set.configs(save.path = "path/to/output/folder/", # Path of folder to 
                       save      = TRUE, # Save fitted objects to save.path if save == T
                       progress  = TRUE) # Save progression in .txt file in save.path if progress == T
 ```
+
 To obtain posterior realisations from $`\mathcal{Q}_q`$ and $`\mathcal{G}`$, one simply runs:
 
 ``` r
@@ -81,12 +82,12 @@ Running the lines below will plot the estimated $`\mathcal{Q}_q`$ and $`\mathcal
 
 ``` r
 par(mfrow=c(1,2),mar=c(2,2,0,0),mgp=c(2.6,0.8,0),pty="s")
-plot_Qq(fitted.Qq,xlim=c(-8,8),ylim=c(-8,8))
+plot_Qq(fitted.Qq,xlim=c(-10,10),ylim=c(-10,10),by=4)
 plot_G(fitted.mod)
 plot_W(fitted.mod)
 ```
 
-<p align="center"><img src="/figures/Plot_Qq_G.png" width="70%" height="70%"/> </p>
+<p align="center"><img src="/figures/Plot_Qq_G_W.png" width="70%" height="70%"/> </p>
 
 ## Probability estimation
 
