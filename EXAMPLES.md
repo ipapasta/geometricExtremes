@@ -5,7 +5,7 @@ As of now, the functions are available for 2- and 3-dimensional modelling,
 with examples respectively in Sections [Examples 2D](#2d) and [Examples 3D](#3d).
 
 <a id="2d"></a>
-# Example 2D
+# Examples 2D
 
 In this section, we detail how to perform Bayesian geometric inference for exceedances of $`\mathcal{Q}_q`$. The procedure to fit exponential exceedances is described [here](#2d-exp), and the one to fit generalised Pareto exceedances is described [here](#2d-GP).
 
@@ -239,7 +239,7 @@ median(ps[,2])
 
 <a id="3d"></a>
 
-# Example 3D
+# Examples 3D
 
 ## Exponential exceedances
 
