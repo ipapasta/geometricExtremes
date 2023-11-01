@@ -20,7 +20,7 @@ Examples and explanations are found [here](EXAMPLES.md).
 
 ## Citing $'\texttt{geometricExtremes}'$
 
-Please cite this package using this [BibTeX]({{file name = 'Citation.bib'}}) file.
+Please cite this package using this [BibTeX](Citation.bib) file.
 
 ## Reporting a bug
 
