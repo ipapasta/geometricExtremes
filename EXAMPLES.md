@@ -167,6 +167,8 @@ X.t <- qt(rcopula.t(N.X, df=df, Sigma=Sigma),df=df) # \boldsymbol{X}_t
 The model fitting procedure involves specifying options and saving configurations respectively through the functions set.options and set.configs.
 A key difference with the previous section on exponential exceedances, is that we now require the additional parameter $`\alpha`$. It arises through the inla parameterisation of the generalised Pareto fitting, see the [inla GPd documentation](https://inla.r-inla-download.org/r-inla.org/doc/likelihood/genPareto.pdf).
 
+### Model fitting
+
 ``` r
 # Set fitting options, see ?set.options for description of variables
 options <- set.options(X                = X$X.L,
@@ -196,6 +198,23 @@ config <- set.configs(save.path = "path/to/output/folder/", # Path of folder to 
                       progress  = TRUE) # Save progression in .txt file in save.path if progress == T
 ```
 
+To obtain posterior realisations from $`\mathcal{Q}_q`$ and $`\mathcal{G}`$, one again simply runs:
+
+``` r
+# Fit the quantile set Q_q
+fitted.Qq <- fit_Qq(X$X.L,options,config,return_fitted_obj=F)
+
+# Fit the sets G and L
+fitted.mod <- fit_GL(fitted.Qq,config)
+```
+Running the lines below will plot the estimated $`\mathcal{Q}_q`$ and $`\mathcal{G}`$ sets with simultaneous predictive intervals.
+
+``` r
+par(mfrow=c(1,3),mar=c(2,2,0,0),mgp=c(2.6,0.8,0),pty="s")
+plot_Qq(fitted.Qq,xlim=c(-10,10),ylim=c(-10,10),by=4)
+plot_G(fitted.mod)
+plot_W(fitted.mod)
+```
 
 <a id="3d"></a>
 
