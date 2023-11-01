@@ -27,6 +27,7 @@ q <- rbind(c(0.90,0.90),
 
 # Perform transformation of marginal distributions of X.N to Laplace
 X <- toLaplaceMargins(X.N,q)
+X$X.L # Observed data transformed to Laplace margins
 ```
 
 ## Model fitting
@@ -37,7 +38,7 @@ The model fitting procedure involves specifying options and saving configuration
 library(geometricExtremes)
 
 # Set fitting options, see ?set.options for description of variables
-options <- set.options(X                = X,
+options <- set.options(X                = X$X.L,
                        excess.dist.fam  = "E",
                        W.data           = "ExcOnly",
                        W.model          = "M3",
@@ -66,7 +67,7 @@ To obtain posterior realisations from $`\mathcal{Q}_q`$ and $`\mathcal{G}`$, one
 
 ``` r
 # Fit the quantile set Q_q
-fitted.Qq <- fit_Qq(X,options,config,return_fitted_obj=F)
+fitted.Qq <- fit_Qq(X$X.L,options,config,return_fitted_obj=F)
 
 # Fit the sets G and L
 fitted.mod <- fit_GL(fitted.Qq,config)
