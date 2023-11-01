@@ -20,7 +20,7 @@ plot_Qq(
 
 \item{alpha}{Value in (0,1) for the (1-alpha)-simultaneous predictive interval of Q_q.}
 
-\item{surface3d}{Surface to plot between the mean ("mean"), and simultaneous predictive interval bounds ("lower_alpha" or "upper_alpha").}
+\item{surface3d}{Surface to plot between the mean ("mean"), and simultaneous predictive interval bounds ("lower" or "upper").}
 
 \item{cex.pts}{Size of points representing exceedances of Q_q.}
 

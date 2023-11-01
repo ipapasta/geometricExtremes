@@ -26,7 +26,7 @@ plot_X_t(
 
 \item{plt}{Plot return level-set ("set") or boundary ("boundary").}
 
-\item{surface3d}{Surface (3d) to plot between the mean ("mean"), and simultaneous predictive interval bounds ("lower_alpha" or "upper_alpha").}
+\item{surface3d}{Surface (3d) to plot between the mean ("mean"), and simultaneous predictive interval bounds ("lower" or "upper").}
 
 \item{xylim}{Plotting limits of x and y axes.}
 

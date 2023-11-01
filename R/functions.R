@@ -542,7 +542,7 @@ eta_posterior <- function(fitted.mod){
 #'
 #' @param fitted.Qq Object returned by the function fit_Qq.
 #' @param alpha Value in (0,1) for the (1-alpha)-simultaneous predictive interval of Q_q.
-#' @param surface3d Surface to plot between the mean ("mean"), and simultaneous predictive interval bounds ("lower_alpha" or "upper_alpha").
+#' @param surface3d Surface to plot between the mean ("mean"), and simultaneous predictive interval bounds ("lower" or "upper").
 #' @param cex.pts Size of points representing exceedances of Q_q.
 #' @param cex.axis Size of axes' labels.
 #' @param xlim Plotting range on x-axis.
@@ -565,7 +565,7 @@ plot_Qq <- function(fitted.Qq,alpha=0.05,surface3d="mean",cex.pts=0.4,cex.axis=1
 #'
 #' @param fitted.mod Object returned by the function fit_GL.
 #' @param alpha Value in (0,1) for the (1-alpha)-simultaneous predictive interval of G.
-#' @param surface3d Surface (3d) to plot between the mean ("mean"), and simultaneous predictive interval bounds ("lower_alpha" or "upper_alpha").
+#' @param surface3d Surface (3d) to plot between the mean ("mean"), and simultaneous predictive interval bounds ("lower" or "upper").
 #' @param surf.col Color of surface (3d).
 #' @param cex.pts Size of points representing exceedances of Q_q.
 #' @param cex.axis Size of axes' labels.
@@ -613,7 +613,7 @@ plot_W <- function(fitted.mod,alpha=0.05,f_W.lim=0,main="",mid.gap=0.1, txt.gap=
 #' @param fitted.mod Object returned by the function fit_GL.
 #' @param list_ret_sets Object returned by the function return_set.
 #' @param plt Plot return level-set ("set") or boundary ("boundary").
-#' @param surface3d Surface (3d) to plot between the mean ("mean"), and simultaneous predictive interval bounds ("lower_alpha" or "upper_alpha").
+#' @param surface3d Surface (3d) to plot between the mean ("mean"), and simultaneous predictive interval bounds ("lower" or "upper").
 #' @param xylim Plotting limits of x and y axes.
 #' @param xyzlim Plotting limits of x, y, and y axes.
 #' @param xlab Label of x-axis.
