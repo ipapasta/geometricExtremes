@@ -147,6 +147,8 @@ mean(etas)
 
 Available soon.
 
+### Simulated data in heavy-tailed margins
+
 ``` r
 rm(list=ls())
 library(QRM)
@@ -160,6 +162,38 @@ Sigma <- rbind(c(1,-0.7),
                c(-0.7,1))
 
 X.t <- qt(rcopula.t(N.X, df=df, Sigma=Sigma),df=df) # \boldsymbol{X}_t
+```
+
+The model fitting procedure involves specifying options and saving configurations respectively through the functions set.options and set.configs.
+A key difference with the previous section on exponential exceedances, is that we now require the additional parameter $`\alpha`$. It arises through the inla parameterisation of the generalised Pareto fitting, see the [inla GPd documentation](https://inla.r-inla-download.org/r-inla.org/doc/likelihood/genPareto.pdf).
+
+``` r
+# Set fitting options, see ?set.options for description of variables
+options <- set.options(X                = X$X.L,
+                       excess.dist.fam  = "GP",
+                       W.data           = "ExcOnly",
+                       W.model          = "M3",
+                       q                = 0.9,
+		       alpha            = 0.5, # GP specific parameter
+                       N.Qq             = 20,
+                       N.GW             = 50,
+                       QR.prior.range   = c(1, 0.999),
+                       QR.prior.sigma   = c(1, 0.8),
+                       zeta.prior.range = c(0.5, 0.999),
+                       zeta.prior.sigma = c(5, 0.8),
+                       phi.prior.range  = c(0.5, 0.999),
+                       phi.prior.sigma  = c(5, 0.8),
+                       mesh.knots.2d    = seq(-pi,pi,by=pi/400),
+                       seed             = 0L)
+
+# Set fitting configurations
+config <- set.configs(save.path = "path/to/output/folder/", # Path of folder to save fitted objects if save == T
+                      file.nm   = paste0("GaussCop_LapMargins_",
+                                         options$excess.dist.fam,"_",
+                                         options$W.model,"_",
+                                         options$W.data),
+                      save      = TRUE, # Save fitted objects to save.path if save == T
+                      progress  = TRUE) # Save progression in .txt file in save.path if progress == T
 ```
 
 
