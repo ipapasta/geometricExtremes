@@ -284,10 +284,13 @@ To obtain posterior realisations from $`\mathcal{Q}_q`$ and $`\mathcal{G}`$, one
 
 ``` r
 fitted.Qq <- fit_Qq(X,options,config,return_fitted_obj=F)
-plot_Qq(fitted.Qq,cex.pts=0.4,cex.axis=1.4,xlim=c(-8,8),ylim=c(-8,8),by=4)
 
 fitted.mod <- fit_GL(fitted.Qq,config)
-plot_G(fitted.mod,surface3d="mean",surf.col = "red")
+```
+
+``` r
+plot_Qq(fitted.Qq,surface3d="mean")
+plot_G(fitted.mod,surface3d="mean")
 ```
 
 ## Generalised Pareto exceedances
