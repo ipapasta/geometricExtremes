@@ -171,7 +171,7 @@ A key difference with the previous section on exponential exceedances, is that w
 
 ``` r
 # Set fitting options, see ?set.options for description of variables
-options <- set.options(X                = X$X.L,
+options <- set.options(X                = X.t,
                        excess.dist.fam  = "GP",
                        W.data           = "ExcOnly",
                        W.model          = "M3",
@@ -202,7 +202,7 @@ To obtain posterior realisations from $`\mathcal{Q}_q`$ and $`\mathcal{G}`$, one
 
 ``` r
 # Fit the quantile set Q_q
-fitted.Qq <- fit_Qq(X$X.L,options,config,return_fitted_obj=F)
+fitted.Qq <- fit_Qq(X.t,options,config,return_fitted_obj=F)
 
 # Fit the sets G and L
 fitted.mod <- fit_GL(fitted.Qq,config)
