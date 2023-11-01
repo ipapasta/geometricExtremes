@@ -20,7 +20,7 @@ Examples and explanations are found [here](EXAMPLES.md).
 
 ## Reporting a bug
 
-Please report any bugs or comments by email to l.demonte@ed.ac.uk.
+Please report any bugs or comments [here](https://github.com/ipapasta/geometricExtremes/issues).
 
 ## References
 
