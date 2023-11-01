@@ -626,7 +626,7 @@ prob_estimation_2d <- function(fitted.mod,post.sample,x,y){
     }
   }else{
     for(i in 1:N.Qq){
-      print(paste0(i,"/",N.Qq))
+      message(paste0("Probabilities for threshold Q_q ",i,"/",N.Qq))
 
       A <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=W)$proj$A
       Qq  <- as.vector(A %*% fitted.mod$Qq[,i])
@@ -703,7 +703,7 @@ chi_posterior <- function(fitted.mod,u,conditioning.marg=1,N.w=5000,transf.G=F){
   chis <- list() # to be returned
 
   for(k in 1:length(u)){
-    print(u[k])
+    message(paste0("Chi(u) estimation for u=",u[k],"."))
     x.sq <- c(u[k],Inf); y.sq <- c(u[k],Inf)
     r_infsup.sq <- t(sapply(W,get_rinfsup,x=x.sq,y=y.sq))
     ind.W.B.sq <- apply(r_infsup.sq,1,function(xx){min(xx)>0})
@@ -722,7 +722,7 @@ chi_posterior <- function(fitted.mod,u,conditioning.marg=1,N.w=5000,transf.G=F){
     cnt <- 0
 
     for(i in 1:N.Qq){
-      print(paste0("Threshold : ",i,"/",N.Qq))
+      message(paste0("Chi(u) estimation for threshold Q_q ",i,"/",N.Qq))
       A <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=W)$proj$A
       Qq  <- as.vector(A %*% fitted.mod$Qq[,i])
 
@@ -1103,8 +1103,6 @@ plot_G_2d <- function(fitted.mod,alpha,mean_med="mean",cex.txt=1.4,cex.pts=0.6,t
     segments(-1,-1,1,-1,lty="dotted",col="grey50")
     segments(1,-1,1,1,lty="dotted",col="grey50")
   }else if(fitted.mod$options$excess.dist.fam=="GP"){
-
-
 
     if(mean_med=="mean"){
       mean_med <- pol2cart(cbind(fitted.mod$mesh$loc,mean.G))

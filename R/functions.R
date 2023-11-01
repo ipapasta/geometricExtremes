@@ -500,6 +500,9 @@ return_set <- function(fitted.mod,t=NA,q.prime=NA){
 #'
 #' @examples
 alpha_posterior <- function(fitted.mod){
+  if(fitted.mod$options$excess.dist.fam=="GP"){
+    stop("alpha estimation only available for X in Laplace margins, with excess.dist.fam='E'.")
+  }
   if(ncol(fitted.mod$X)==2){
     alphas <- alpha_posterior_2d(fitted.mod)
   }else if(ncol(fitted.mod$X)==3){
@@ -517,6 +520,9 @@ alpha_posterior <- function(fitted.mod){
 #'
 #' @examples
 eta_posterior <- function(fitted.mod){
+  if(fitted.mod$options$excess.dist.fam=="GP"){
+    stop("alpha estimation only available for X in Laplace margins, with excess.dist.fam='E'.")
+  }
   if(ncol(fitted.mod$X)==2){
     etas <- eta_posterior_2d(fitted.mod)
   }else if(ncol(fitted.mod$X)==3){
