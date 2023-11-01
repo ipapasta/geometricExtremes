@@ -218,6 +218,23 @@ plot_W(fitted.mod)
 
 <p align="center"><img src="/figures/Plot_Qq_G_W_gp.png" width="80%" height="80%"/> </p>
 
+### Probability estimation
+
+``` r
+# Define rectangular region of interest
+x_B <- c(-15,10); y_B <- c(10,15)
+B <- expand.grid(x=x_B,y=y_B)
+S_B <- range(atan2(y=B[,2],x=B[,1]))
+
+# Sample from the posterior distribution of G and L to obtain samples on S_B
+post.samp <- sample_QGW_posterior_2d(fitted.mod,N.w=1000,S_B=S_B,transf.G=F)
+
+# Perform Bayesian probability estimation
+ps <- prob_estimation(fitted.mod,post.samp,x_B,y_B)
+median(ps[,2])
+```
+
+
 <a id="3d"></a>
 
 # Example 3D
