@@ -1,6 +1,8 @@
 # Examples of $`\texttt{geometricExtremes}`$ functionalities
 
-This file contains example-code for running the main functions of the $`\texttt{geometricExtremes}`$ package. As of now, the functions are available for 2- and 3-dimensional modelling, with examples respectively in Sections [2D](#2d) and [3D](#3d).
+This file contains example-code to run the main functions of the $`\texttt{geometricExtremes}`$ package. 
+As of now, the functions are available for 2- and 3-dimensional modelling,
+with examples respectively in Sections [Examples 2D](#2d) and [Examples 3D](#3d).
 
 <a id="2d"></a>
 # Example 2D
