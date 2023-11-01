@@ -47,7 +47,7 @@ Bachl F, Lindgren F, Borchers D, Illian J (2019). inlabru: an R package for Baye
 
 <div id="ref-BolinLindgren2018" class="csl-entry">
 
-Bolin D, Lindgren F (2018). Calculating Probabilistic Excursion Sets and Related Quantities Using excursions. Journal of Statistical Software, 86(5), 1–20. <https://www.jstatsoft.org/article/view/v086i05>.
+Bolin D, Lindgren F (2018). Calculating Probabilistic Excursion Sets and Related Quantities Using excursions. Journal of Statistical Software, 86(5), 1–20. <https://doi.org/10.18637/jss.v086.i05>.
 
 </div>
 
