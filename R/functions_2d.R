@@ -784,7 +784,7 @@ chi_posterior <- function(fitted.mod,u,conditioning.marg=1,N.w=5000,transf.G=F){
 #' @noRd
 #'
 #' @examples
-return_set_2d <- function(fitted.mod,t){
+return_set_2d <- function(fitted.mod,alpha=0.05,t){
   ret_set_list <- list(t=t)
   for(k in 1:length(t)){
     K <- log(t[k]*(1-fitted.mod$options$q))
@@ -799,7 +799,13 @@ return_set_2d <- function(fitted.mod,t){
         cnt <- cnt+1
       }
     }
-    ret_set_list[[k+1]] <- post.ret.set
+
+    excurs <- simconf.mc(samples = t(post.ret.set),alpha = 1-alpha)
+
+    ret_set_list[[k+1]] <- list(samp  = post.ret.set,
+                                mean  = apply(post.ret.set,2,mean),
+                                lower = excurs$a,
+                                upper = excurs$b)
   }
   return(ret_set_list)
 }
@@ -1259,9 +1265,8 @@ plot_return_bdry_2d <- function(fitted.mod,list_ret_sets,cex.pts=0.4,cex.axis=1.
   cols <- rev(seq(col2rgb("grey20")[1],col2rgb("grey80")[1],length.out=length(t)+1)/255)
   for(i in length(t):1){
     post.ret.set <- list_ret_sets[[i+1]]#return_set_2d(fitted.mod,t=t[i])
-    excurs <- simconf.mc(samples = t(post.ret.set),alpha = 0.95)
-    low <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$a))
-    up <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$b))
+    low <- pol2cart(cbind(fitted.mod$mesh$loc,post.ret.set$lower))
+    up <- pol2cart(cbind(fitted.mod$mesh$loc,post.ret.set$upper))
     polygon(up,col=rgb(cols[i], cols[i], cols[i], alpha = alpha.col),
             border=rgb(cols[i], cols[i], cols[i], alpha = alpha.col))
     polygon(low,col=rgb(1,1,1),border=rgb(cols[i], cols[i], cols[i], alpha = alpha.col))
@@ -1326,7 +1331,7 @@ plot_return_sets_2d <- function(fitted.mod,list_ret_sets,cex.pts=0.4,cex.axis=1.
 
   for(i in length(t):1){
     post.ret.set <- list_ret_sets[[i+1]]#return_set_2d(fitted.mod,t=t[i])
-    mean_post <- apply(post.ret.set,2,mean)
+    mean_post <- post.ret.set$mean
     mean_post <- pol2cart(cbind(fitted.mod$mesh$loc,mean_post))
 
     polygon(mean_post,col="white",border="white")

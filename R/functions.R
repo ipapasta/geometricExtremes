@@ -116,6 +116,9 @@ set.options <- function(X,excess.dist.fam,W.model,W.data,use.mean.Qq,q,alpha,N.Q
       stop("mesh.knots.2d must take values in [-pi,pi].")
     }
   }else if(ncol(X)==3){
+    if(excess.dist.fam=="GP"){
+      stop("Functionality available very soon.")
+    }
     if(missing(mesh.res.3d)){
       stop("Specify value of mesh.res.3d.")
     }else if(mesh.res.3d<1){
@@ -456,6 +459,7 @@ prob_estimation <- function(fitted.mod,post.sample,x_B,y_B){
 #' Obtain realisations from the radial function of the return level-set X_t.
 #'
 #' @param fitted.mod Object returned from the function fit_GL.
+#' @param alpha Value in (0,1) for the (1-alpha)-simultaneous predictive interval of X_t.
 #' @param t Vector of return periods t.prime <= 1/(1-q) for the return level-sets X_{t.prime}.
 #' @param q.prime Vector of probabilities of the canonical return level-set level-sets X_{1/(1-q.prime)}.
 #'
@@ -463,7 +467,10 @@ prob_estimation <- function(fitted.mod,post.sample,x_B,y_B){
 #' @export
 #'
 #' @examples
-return_set <- function(fitted.mod,t=NA,q.prime=NA){
+return_set <- function(fitted.mod,alpha=0.05,t=NA,q.prime=NA){
+  if(fitted.mod$options$excess.dist.fam=="GP"){
+    stop("GP exceedances probabilities not yet implemented")
+  }
   if(inherits(t,"logical") & inherits(q.prime,"logical")){
     stop("Specify a value for t or q.prime.")
   }else if(!inherits(t,"logical") & !inherits(q.prime,"logical")){
@@ -480,12 +487,12 @@ return_set <- function(fitted.mod,t=NA,q.prime=NA){
   }
 
   if(ncol(fitted.mod$X)==2){
-    ret_set <- return_set_2d(fitted.mod,t=t)
+    ret_set <- return_set_2d(fitted.mod,alpha=alpha,t=t)
   }else if(ncol(fitted.mod$X)>2){
     if(length(t)>1){
-      stop("Specifiy only one value of t or q.prime for 3d plots.")
+      stop("Specify only one value of t or q.prime for 3d plots.")
     }
-    ret_set <- return_set_3d(fitted.mod,t=t)
+    ret_set <- return_set_3d(fitted.mod,alpha=alpha,t=t)
   }else{
     return("X must be an n by p matrix, with p = 2.")
   }
@@ -606,6 +613,7 @@ plot_W <- function(fitted.mod,alpha=0.05,f_W.lim=0,main="",mid.gap=0.1, txt.gap=
 #' @param fitted.mod Object returned by the function fit_GL.
 #' @param list_ret_sets Object returned by the function return_set.
 #' @param plt Plot return level-set ("set") or boundary ("boundary").
+#' @param surface3d Surface (3d) to plot between the mean ("mean"), and simultaneous predictive interval bounds ("lower_alpha" or "upper_alpha").
 #' @param xylim Plotting limits of x and y axes.
 #' @param xyzlim Plotting limits of x, y, and y axes.
 #' @param xlab Label of x-axis.
@@ -619,7 +627,7 @@ plot_W <- function(fitted.mod,alpha=0.05,f_W.lim=0,main="",mid.gap=0.1, txt.gap=
 #' @export
 #'
 #' @examples
-plot_X_t <- function(fitted.mod,list_ret_sets,plt = "boundary",xylim=c(0,0),xyzlim=c(0,0),xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3]),by=2,cex.pts=0.4,cex.axis=1.4){
+plot_X_t <- function(fitted.mod,list_ret_sets,plt = "boundary",surface3d="mean",xylim=c(0,0),xyzlim=c(0,0),xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3]),by=2,cex.pts=0.4,cex.axis=1.4){
   if(!(plt %in% c("boundary","set"))){
     stop("list_ret_sets must take value 'boundary' or 'set'.")
   }
@@ -631,7 +639,7 @@ plot_X_t <- function(fitted.mod,list_ret_sets,plt = "boundary",xylim=c(0,0),xyzl
     }
   }else if(ncol(fitted.mod$X)==3){
     if(plt=="boundary"){
-      plot_return_bdry_3d(fitted.mod,list_ret_sets,cex.pts=cex.pts,cex.axis=cex.axis,xyzlim=xyzlim,xlab=xlab,ylab=ylab,zlab=zlab)
+      plot_return_bdry_3d(fitted.mod,list_ret_sets,surface=surface3d,cex.pts=cex.pts,cex.axis=cex.axis,xyzlim=xyzlim,xlab=xlab,ylab=ylab,zlab=zlab)
     }else if(plt=="set"){
       stop("Not available for 3d.")
     }

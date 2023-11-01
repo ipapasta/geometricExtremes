@@ -8,6 +8,7 @@ plot_X_t(
   fitted.mod,
   list_ret_sets,
   plt = "boundary",
+  surface3d = "mean",
   xylim = c(0, 0),
   xyzlim = c(0, 0),
   xlab = expression(X[1]),
@@ -24,6 +25,8 @@ plot_X_t(
 \item{list_ret_sets}{Object returned by the function return_set.}
 
 \item{plt}{Plot return level-set ("set") or boundary ("boundary").}
+
+\item{surface3d}{Surface (3d) to plot between the mean ("mean"), and simultaneous predictive interval bounds ("lower_alpha" or "upper_alpha").}
 
 \item{xylim}{Plotting limits of x and y axes.}
 

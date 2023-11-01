@@ -4,10 +4,12 @@
 \alias{return_set}
 \title{Obtain realisations from the radial function of the return level-set X_t.}
 \usage{
-return_set(fitted.mod, t = NA, q.prime = NA)
+return_set(fitted.mod, alpha = 0.05, t = NA, q.prime = NA)
 }
 \arguments{
 \item{fitted.mod}{Object returned from the function fit_GL.}
+
+\item{alpha}{Value in (0,1) for the (1-alpha)-simultaneous predictive interval of X_t.}
 
 \item{t}{Vector of return periods t.prime <= 1/(1-q) for the return level-sets X_{t.prime}.}
 

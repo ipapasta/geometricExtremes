@@ -327,11 +327,11 @@ fit_GL_3d <- function(fitted.Qq,config){
 #' @noRd
 #'
 #' @examples
-return_set_3d <- function(fitted.mod,t){
+return_set_3d <- function(fitted.mod,alpha=0.05,t){
   ret_set_list <- list(t=t)
   for(k in 1:length(t)){
-    K <- log(t*(1-fitted.mod$options$q))
-    n.mesh <- length(fitted.mod$mesh$loc)
+    K <- log(t[k]*(1-fitted.mod$options$q))
+    n.mesh <- nrow(fitted.mod$mesh$loc)
     n.samp <- fitted.mod$options$N.Qq*fitted.mod$options$N.GW
     post.ret.set <- matrix(NA,nrow=n.samp,ncol=n.mesh)
     cnt <- 1
@@ -342,7 +342,13 @@ return_set_3d <- function(fitted.mod,t){
         cnt <- cnt+1
       }
     }
-    ret_set_list[[k+1]] <- post.ret.set
+
+    excurs <- simconf.mc(samples = t(post.ret.set),alpha = 1-alpha)
+
+    ret_set_list[[k+1]] <- list(samp  = post.ret.set,
+                                mean  = apply(post.ret.set,2,mean),
+                                lower = excurs$a,
+                                upper = excurs$b)
   }
   return(ret_set_list)
 }
@@ -504,6 +510,7 @@ plot_G_3d <- function(fitted.mod,alpha=0.05,surface,xlab=expression(X[1]),ylab=e
 #'
 #' @param fitted.mod
 #' @param list_ret_sets
+#' @param surface
 #' @param cex.pts
 #' @param cex.axis
 #' @param xyzlim
@@ -517,7 +524,7 @@ plot_G_3d <- function(fitted.mod,alpha=0.05,surface,xlab=expression(X[1]),ylab=e
 #' @noRd
 #'
 #' @examples
-plot_return_bdry_3d <- function(fitted.mod,list_ret_sets,cex.pts=0.4,cex.axis=1.4,xyzlim=c(0,0),xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3])){
+plot_return_bdry_3d <- function(fitted.mod,list_ret_sets,surface="mean",cex.pts=0.4,cex.axis=1.4,xyzlim=c(0,0),xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3])){
 
   t <- rev(sort(list_ret_sets$t))
 
@@ -529,7 +536,13 @@ plot_return_bdry_3d <- function(fitted.mod,list_ret_sets,cex.pts=0.4,cex.axis=1.
   }
 
   post.ret.set <- list_ret_sets[[2]]
-  partial.G <- apply(post.ret.set,2,mean)
+  if(surface=="mean"){
+    partial.G <- post.ret.set$mean
+  }else if(surface=="lower"){
+    partial.G <- post.ret.set$lower
+  }else if(surface=="upper"){
+    partial.G <- post.ret.set$upper
+  }
 
   N <- 100
   locs.polar     <- as.matrix(data.frame(expand.grid(theta=seq(-pi, pi, len=N), phi = seq(-pi/2, pi/2, len=N)), r=rep(1, 10*10)))
