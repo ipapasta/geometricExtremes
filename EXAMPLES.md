@@ -69,8 +69,8 @@ config <- set.configs(save.path = "path/to/output/folder/", # Path of folder to 
 		                         options$excess.dist.fam,"_",
 					 options$W.model,"_",
 					 options$W.data),
-                      save      = TRUE, # Save fitted objects to save.path if save == T
-                      progress  = TRUE) # Save progression in .txt file in save.path if progress == T
+                      save      = FALSE, # Save fitted objects to save.path if save == T
+                      progress  = FALSE) # Save progression in .txt file in save.path if progress == T
 ```
 
 To obtain posterior realisations from $`\mathcal{Q}_q`$ and $`\mathcal{G}`$, one simply runs:
@@ -194,8 +194,8 @@ config <- set.configs(save.path = "path/to/output/folder/", # Path of folder to 
                                          options$excess.dist.fam,"_",
                                          options$W.model,"_",
                                          options$W.data),
-                      save      = TRUE, # Save fitted objects to save.path if save == T
-                      progress  = TRUE) # Save progression in .txt file in save.path if progress == T
+                      save      = FALSE, # Save fitted objects to save.path if save == T
+                      progress  = FALSE) # Save progression in .txt file in save.path if progress == T
 ```
 
 To obtain posterior realisations from $`\mathcal{Q}_q`$ and $`\mathcal{G}`$, one again simply runs:
