@@ -216,6 +216,9 @@ plot_G(fitted.mod)
 plot_W(fitted.mod)
 ```
 
+<p align="center"><img src="/figures/Plot_Qq_G_W_GP.png" width="80%" height="80%"/> </p>
+
+
 <a id="3d"></a>
 
 # Example 3D
