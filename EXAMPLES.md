@@ -283,15 +283,27 @@ config <- set.configs(save.path = "path/to/folder/",
 To obtain posterior realisations from $`\mathcal{Q}_q`$ and $`\mathcal{G}`$, one runs:
 
 ``` r
+# Fit the quantile set Q_q
 fitted.Qq <- fit_Qq(X,options,config,return_fitted_obj=F)
 
+# Fit the sets G and L
 fitted.mod <- fit_GL(fitted.Qq,config)
 ```
+
+To plot the mean posterior sets $`\mathcal{Q}_q`$ and $`\mathcal{G}`$, one runs: 
 
 ``` r
 plot_Qq(fitted.Qq,surface3d="mean")
 plot_G(fitted.mod,surface3d="mean")
 ```
+
+To obtain the lower and upper surfaces of the ($`1-\alpha`$)-simultaneous predictive intervals of $`\mathcal{Q}_q`$ and $`\mathcal{G}`$, it suffices to set, for instance:
+
+``` r
+plot_Qq(fitted.Qq,alpha=0.05,surface3d="lower")
+plot_G(fitted.mod,alpha=0.05,surface3d="upper")
+```
+
 
 ## Generalised Pareto exceedances
 
