@@ -81,13 +81,13 @@ fitted.mod <- fit_GL(fitted.Qq,config)
 Running the lines below will plot the estimated $`\mathcal{Q}_q`$ and $`\mathcal{G}`$ sets with simultaneous predictive intervals.
 
 ``` r
-par(mfrow=c(1,2),mar=c(2,2,0,0),mgp=c(2.6,0.8,0),pty="s")
+par(mfrow=c(1,3),mar=c(2,2,0,0),mgp=c(2.6,0.8,0),pty="s")
 plot_Qq(fitted.Qq,xlim=c(-10,10),ylim=c(-10,10),by=4)
 plot_G(fitted.mod)
 plot_W(fitted.mod)
 ```
 
-<p align="center"><img src="/figures/Plot_Qq_G_W.png" width="70%" height="70%"/> </p>
+<p align="center"><img src="/figures/Plot_Qq_G_W.png" width="80%" height="80%"/> </p>
 
 ## Probability estimation
 
