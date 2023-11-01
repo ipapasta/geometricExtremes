@@ -1,3 +1,8 @@
+# Examples of \texttt{geometricExtremes} functionalities
+
+This file contains example-code for running the main functions of the \texttt{geometricExremes} package. As of now, the functions are available for 2- and 3- dimensional modelling, with examples respectively in Sections [2d](#2d) and [3d](#3d).
+
+<a id="2d"></a>
 # Example 2D
 
 ## Simulated data and transformation to Laplace marginal distributions
@@ -130,6 +135,8 @@ Below is a function to obtain posterior samples from the coefficient of residual
 etas <- eta_posterior(fitted.mod)
 mean(etas)
 ```
+
+<a id="3d"></a>
 
 # Example 3D
 ``` r
