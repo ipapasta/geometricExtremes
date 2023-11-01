@@ -188,7 +188,7 @@ options <- set.options(X                = X$X.L,
 
 # Set fitting configurations
 config <- set.configs(save.path = "path/to/output/folder/", # Path of folder to save fitted objects if save == T
-                      file.nm   = paste0("GaussCop_LapMargins_",
+                      file.nm   = paste0("tCop_tMargins_",
                                          options$excess.dist.fam,"_",
                                          options$W.model,"_",
                                          options$W.data),
