@@ -780,6 +780,7 @@ chi_posterior <- function(fitted.mod,u,conditioning.marg=1,N.w=5000,transf.G=F){
 #' @param t
 #' @param q.prime
 #'
+#' @import excursions
 #' @return
 #' @noRd
 #'
@@ -1243,6 +1244,7 @@ plot_W_2d <- function(fitted.mod,alpha,xylim,main="",mid.gap=0.1, txt.gap=0.02,c
 #'
 #' @import grDevices
 #' @import graphics
+#' @import excursions
 #' @return
 #' @noRd
 #'
@@ -1267,9 +1269,10 @@ plot_return_bdry_2d <- function(fitted.mod,list_ret_sets,cex.pts=0.4,cex.axis=1.
     post.ret.set <- list_ret_sets[[i+1]]#return_set_2d(fitted.mod,t=t[i])
     low <- pol2cart(cbind(fitted.mod$mesh$loc,post.ret.set$lower))
     up <- pol2cart(cbind(fitted.mod$mesh$loc,post.ret.set$upper))
-    polygon(up,col=rgb(cols[i], cols[i], cols[i], alpha = alpha.col),
-            border=rgb(cols[i], cols[i], cols[i], alpha = alpha.col))
-    polygon(low,col=rgb(1,1,1),border=rgb(cols[i], cols[i], cols[i], alpha = alpha.col))
+    col <- cols[length(cols)-i+1]
+    polygon(up,col=rgb(col, col, col, alpha = alpha.col),
+            border=rgb(col, col, col, alpha = alpha.col))
+    polygon(low,col=rgb(1,1,1),border=rgb(col, col, col, alpha = alpha.col))
 
   }
   points(fitted.mod$X,col="grey35",pch=16,cex=cex.pts)

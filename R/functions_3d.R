@@ -323,6 +323,7 @@ fit_GL_3d <- function(fitted.Qq,config){
 #' @param t
 #' @param q.prime
 #'
+#' @import excursions
 #' @return
 #' @noRd
 #'
@@ -520,6 +521,7 @@ plot_G_3d <- function(fitted.mod,alpha=0.05,surface,xlab=expression(X[1]),ylab=e
 #'
 #' @import rgl
 #' @import pracma
+#' @import excursions
 #' @return
 #' @noRd
 #'
