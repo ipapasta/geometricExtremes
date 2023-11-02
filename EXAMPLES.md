@@ -39,8 +39,8 @@ q <- rbind(c(0.90,0.90),
            c(0.10,0.10))
 
 # Perform transformation of marginal distributions of X.N to Laplace
-X <- toLaplaceMargins(X.N,q)
-X$X.L # Observed data transformed to Laplace margins
+LapTransf <- toLaplaceMargins(X.N,q)
+LapTransf$X.L # Observed data transformed to Laplace margins
 ```
 
 ### Model fitting
@@ -49,7 +49,7 @@ The model fitting procedure involves specifying options and saving configuration
 
 ``` r 
 # Set fitting options, see ?set.options for description of variables
-options <- set.options(X                = X$X.L,
+options <- set.options(X                = LapTransf$X.L,
                        excess.dist.fam  = "E",
                        W.data           = "ExcOnly",
                        W.model          = "M3",
@@ -79,7 +79,7 @@ To obtain posterior realisations from $`\mathcal{Q}_q`$ and $`\mathcal{G}`$, one
 
 ``` r
 # Fit the quantile set Q_q
-fitted.Qq <- fit_Qq(X$X.L,options,config,return_fitted_obj=F)
+fitted.Qq <- fit_Qq(LapTransf$X.L,options,config,return_fitted_obj=F)
 
 # Fit the sets G and L
 fitted.mod <- fit_GL(fitted.Qq,config)
@@ -115,12 +115,22 @@ median(ps[,2])
 
 ``` r
 par(mfrow=c(1,2),mar=c(2,2,0,0),mgp=c(2.6,0.8,0),pty="s")
-list_ret_sets <- return_set(fitted.mod,q.prime=c(0.95,0.99,0.999))
-plot_X_t(fitted.mod,list_ret_sets,plt="boundary",xylim=c(-10,10))
-plot_X_t(fitted.mod,list_ret_sets,plt="set",xylim=c(-10,10))
+return_sets <- return_set(fitted.mod,q.prime=c(0.95,0.99,0.999),include.Qq = F)
+plot_X_t(fitted.mod,return_sets,plt="boundary",xylim=c(-10,10))
+plot_X_t(fitted.mod,return_sets,plt="set",xylim=c(-10,10))
 ```
 
 <p align="center"><img src="/figures/Ret_sets.png" width="70%" height="70%"/> </p>
+
+``` r
+par(mfrow=c(1,2),mar=c(2,2,0,0),mgp=c(2.6,0.8,0),pty="s")
+return_sets <- return_set(fitted.mod,q.prime=c(0.95,0.99,0.999),include.Qq = F, LapTransf = LapTransf)
+plot_X_t(fitted.mod,return_sets,plt="boundary",xylim=c(-10,10))
+plot_X_t(fitted.mod,return_sets,plt="set",xylim=c(-10,10))
+```
+
+
+<p align="center"><img src="/figures/Ret_sets_orig_margins.png" width="70%" height="70%"/> </p>
 
 
 ### Measures of extremal dependence
