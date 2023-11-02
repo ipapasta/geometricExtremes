@@ -173,7 +173,7 @@ df <- 3
 Sigma <- rbind(c(1,-0.7),
                c(-0.7,1))
 
-X.t <- qt(rcopula.t(N.X, df=df, Sigma=Sigma),df=df) # \boldsymbol{X}_t
+X.t <- qt(rcopula.t(N.X, df=df, Sigma=Sigma),df=df)
 ```
 
 The model fitting procedure involves specifying options and saving configurations respectively through the functions set.options and set.configs.
