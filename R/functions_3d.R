@@ -532,9 +532,9 @@ plot_return_bdry_3d <- function(fitted.mod,list_ret_sets,surface="mean",cex.pts=
   t <- rev(sort(list_ret_sets$t))
 
   if(sum(xyzlim==c(0,0))==2){
-    plot3d(fitted.mod$X,xlab=xlab,ylab=ylab,zlab=zlab)
+    plot3d(list_ret_sets$X,xlab=xlab,ylab=ylab,zlab=zlab)
   }else{
-    plot3d(fitted.mod$X,xlab=xlab,ylab=ylab,zlab=zlab,
+    plot3d(list_ret_sets$X,xlab=xlab,ylab=ylab,zlab=zlab,
            xlim=xyzlim,ylim=xyzlim,zlim=xyzlim)
   }
 
@@ -558,6 +558,11 @@ plot_return_bdry_3d <- function(fitted.mod,list_ret_sets,surface="mean",cex.pts=
   surface3d(x=locs.cartesian[,1]*partial.G.m,
             y=locs.cartesian[,2]*partial.G.m,
             z=locs.cartesian[,3]*partial.G.m, alpha=.3, col="gray")
+
+  # partial.G.m <- matrix(partial.G, nrow=N, ncol=N)
+  # surface3d(x=fitted.mod$mesh$loc[,1]*partial.G.m,
+  #           y=fitted.mod$mesh$loc[,2]*partial.G.m,
+  #           z=fitted.mod$mesh$loc[,3]*partial.G.m, alpha=.3, col="gray")
   axes3d(edges="bbox")
 }
 

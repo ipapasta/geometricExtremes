@@ -234,7 +234,7 @@ toLaplaceMargins <- function(X,q){
         if(x<LapTransf$mu[2,i]){
           return(q[2]*(1-evd::pgpd(-x,-LapTransf$mu[2,i],LapTransf$sigma[2,i],LapTransf$xi[2,i])))
         }else if(x>LapTransf$mu[2,i] & x <LapTransf$mu[1,i]){
-          return(q[2] + (q[1]-q[2])*F_X(x)*n/(n+1))
+          return(q[2] + (q[1]-q[2])*F_X(x)) #*n/(n+1)
         }else{
           return(q[1] + (1-q[1])*evd::pgpd(x,LapTransf$mu[1,i],LapTransf$sigma[1,i],LapTransf$xi[1,i]))
         }
@@ -245,7 +245,7 @@ toLaplaceMargins <- function(X,q){
     }else if(sum(is.na(q))==2){
       F_X <- stats::ecdf(X[,i])
       n <- length(X[,i])
-      U <- F_X(X[,i])*n/(n+1)
+      U <- F_X(X[,i])#*n/(n+1)
       LapTransf$X.L[,i] <- rmutil::qlaplace(U)
     }else if(is.na(q)[1]){
       X.up <- X[X[,i]>LapTransf$mu[2,i],i]
@@ -255,7 +255,7 @@ toLaplaceMargins <- function(X,q){
         if(x<LapTransf$mu[2,i]){
           return(q[2]*(1-evd::pgpd(-x,-LapTransf$mu[2,i],LapTransf$sigma[2,i],LapTransf$xi[2,i])))
         }else if(x>LapTransf$mu[2,i]){
-          return(q[2] + (1-q[2])*F_X(x)*n/(n+1))
+          return(q[2] + (1-q[2])*F_X(x))#*n/(n+1))
         }
       }
       U <- sapply(X[,i],function(xx) pX(xx))
@@ -266,7 +266,7 @@ toLaplaceMargins <- function(X,q){
       n <- length(X.low)
       pX <- function(x){
         if(x<LapTransf$mu[1,i]){
-          return(q[1]*F_X(x)*n/(n+1))
+          return(q[1]*F_X(x))#*n/(n+1))
         }else{
           return(q[1] + (1-q[1])*evd::pgpd(x,LapTransf$mu[1,i],LapTransf$sigma[1,i],LapTransf$xi[1,i]))
         }
@@ -300,7 +300,7 @@ toOriginalMargins <- function(X.L,LapTransf){
   d <- ncol(X.L)
   X.obs <- LapTransf$X
   if(d!=ncol(X.obs)){
-    stop("X and X.L do not have same number of columns.")
+    stop("X.L and LapTransf$X do not have same number of columns.")
   }
   X.orig <- matrix(NA,nrow(X.L),ncol(X.L))
   for(i in 1:d){
@@ -320,11 +320,11 @@ toOriginalMargins <- function(X.L,LapTransf){
         }
       }
       n <- length(X.L[,i])
-      X.orig[,i] <- sapply(rmutil::plaplace(X.L[,i]),function(uu) quantileX(uu)*(n+1)/n)
+      X.orig[,i] <- sapply(rmutil::plaplace(X.L[,i]),function(uu) quantileX(uu))#*(n+1)/n)
     }else if(sum(is.na(q))==2){
       U <- rmutil::plaplace(X.L[,i])
       n <- length(X.L[,i])
-      X.orig[,i] <- sapply(U,function(uu) quantile(X.obs[,i],uu*(n+1)/n))
+      X.orig[,i] <- sapply(U,function(uu) quantile(X.obs[,i],uu))#*(n+1)/n))
 
     }else if(is.na(q)[1]){
       X.up.obs <- X.obs[X.obs[,i]>=LapTransf$mu[2,i],i]
@@ -334,24 +334,25 @@ toOriginalMargins <- function(X.L,LapTransf){
           u.low <- 1-u/q[2]
           return(-evd::qgpd(u.low,-LapTransf$mu[2,i],LapTransf$sigma[2,i],LapTransf$xi[2,i]))
         }else if(u>=q[2]){
-          u.mid <- (u-q[2])/(1-q[2])*(n+1)/n
+          u.mid <- (u-q[2])/(1-q[2])
           return(quantile(X.up.obs,u.mid))
         }
       }
-      X.orig[,i] <- sapply(rmutil::plaplace(X.L[,i]),function(uu) quantileX(uu))
+      X.orig[,i] <- sapply(rmutil::plaplace(X.L[,i]),function(uu) quantileX(uu))#*(n+1)/n)
     }else{
       X.low.obs <- X.obs[X.obs[,i]<=LapTransf$mu[1,i],i]
       n <- length(X.low.obs)
       quantileX <- function(u){
         if(u<=q[1]){
-          u.mid <- u/q[1]*(n+1)/n
+          u.mid <- u/q[1]
+          # if(u.mid<=0 || u.mid>=1){print(u.mid)}
           return(quantile(X.low.obs,u.mid))
         }else{
           u.up <- (u-q[1])/(1-q[1])
           return(evd::qgpd(u.up,LapTransf$mu[1,i],LapTransf$sigma[1,i],LapTransf$xi[1,i]))
         }
       }
-      X.orig[,i] <- sapply(rmutil::plaplace(X.L[,i]),function(uu) quantileX(uu))
+      X.orig[,i] <- sapply(rmutil::plaplace(X.L[,i]),function(uu) quantileX(uu))#*(n+1)/n)
     }
   }
   X.orig
@@ -490,29 +491,32 @@ return_set <- function(fitted.mod,alpha=0.05,t=NA,q.prime=NA,include.Qq=FALSE,La
 
   if(ncol(fitted.mod$X)==2){
     ret_set <- return_set_2d(fitted.mod,alpha=alpha,t=t,include.Qq=include.Qq)
+    ret_set_orig <- NA
     if(!inherits(LapTransf,"logical")){
-      ret_set$X <- toOriginalMargins(fitted.mod$X,LapTransf)
-      for(i in 3:length(ret_set)){
-        for(j in 2:length(ret_set[[i]])){
-          ret_set[[i]][[j]] <- toOriginalMargins(ret_set[[i]][[j]],LapTransf)
+      ret_set_orig <- ret_set
+      ret_set_orig$X <- toOriginalMargins(fitted.mod$X,LapTransf)
+      for(i in 3:length(ret_set_orig)){
+        for(j in 2:length(ret_set_orig[[i]])){
+          ret_set_orig[[i]][[j]] <- toOriginalMargins(ret_set_orig[[i]][[j]],LapTransf)
         }
       }
     }
-    return(ret_set)
+    return(list(Laplace=ret_set,Original=ret_set_orig))
   }else if(ncol(fitted.mod$X)>2){
     if(length(t)>1){
       stop("Specify only one value of t or q.prime for 3d plots.")
     }
     ret_set <- return_set_3d(fitted.mod,alpha=alpha,t=t)
+    ret_set_orig <- NA
     if(!inherits(LapTransf,"logical")){
-      ret_set$X <- toOriginalMargins(fitted.mod$X,LapTransf)
-      for(i in 3:length(ret_set)){
-        for(j in 2:length(ret_set[[i]])){
-          ret_set[[i]][[j]] <- toOriginalMargins(ret_set[[i]][[j]],LapTransf)
-        }
+      stop("Not available yet.")
+      ret_set_orig <- ret_set
+      ret_set_orig$X <- toOriginalMargins(fitted.mod$X,LapTransf)
+      for(i in 2:length(ret_set_orig[[3]])){
+        ret_set_orig[[3]][[i]] <- toOriginalMargins(ret_set_orig[[3]][[i]],LapTransf)
       }
     }
-    return(ret_set)
+    return(list(Laplace=ret_set,Original=ret_set_orig))
   }else{
     return("X must be an n by p matrix, with p = 2.")
   }
