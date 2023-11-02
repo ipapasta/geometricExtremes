@@ -115,7 +115,7 @@ median(ps[,2])
 
 ``` r
 par(mfrow=c(1,2),mar=c(2,2,0,0),mgp=c(2.6,0.8,0),pty="s")
-return_sets <- return_set(fitted.mod,q.prime=c(0.95,0.99,0.999),include.Qq = F)
+return_sets <- return_set(fitted.mod,q.prime=c(0.95,0.99,0.999),include.Qq = FALSE)
 plot_X_t(fitted.mod,return_sets,plt="boundary",xylim=c(-10,10))
 plot_X_t(fitted.mod,return_sets,plt="set",xylim=c(-10,10))
 ```
@@ -124,7 +124,7 @@ plot_X_t(fitted.mod,return_sets,plt="set",xylim=c(-10,10))
 
 ``` r
 par(mfrow=c(1,2),mar=c(2,2,0,0),mgp=c(2.6,0.8,0),pty="s")
-return_sets <- return_set(fitted.mod,q.prime=c(0.95,0.99,0.999),include.Qq = F, LapTransf = LapTransf)
+return_sets <- return_set(fitted.mod,q.prime=c(0.95,0.99,0.999),include.Qq = FALSE, LapTransf = LapTransf)
 plot_X_t(fitted.mod,return_sets,plt="boundary",xylim=c(-10,10))
 plot_X_t(fitted.mod,return_sets,plt="set",xylim=c(-10,10))
 ```
