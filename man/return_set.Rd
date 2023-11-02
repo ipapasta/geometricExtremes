@@ -4,7 +4,14 @@
 \alias{return_set}
 \title{Obtain realisations from the radial function of the return level-set X_t.}
 \usage{
-return_set(fitted.mod, alpha = 0.05, t = NA, q.prime = NA)
+return_set(
+  fitted.mod,
+  alpha = 0.05,
+  t = NA,
+  q.prime = NA,
+  include.Qq = FALSE,
+  LapTransf = NA
+)
 }
 \arguments{
 \item{fitted.mod}{Object returned from the function fit_GL.}
@@ -14,6 +21,10 @@ return_set(fitted.mod, alpha = 0.05, t = NA, q.prime = NA)
 \item{t}{Vector of return periods t.prime <= 1/(1-q) for the return level-sets X_{t.prime}.}
 
 \item{q.prime}{Vector of probabilities of the canonical return level-set level-sets X_{1/(1-q.prime)}.}
+
+\item{include.Qq}{Boolean: Include Q_q in the return sets if TRUE, do not include otherwise.}
+
+\item{LapTransf}{Object returned by the function toLaplaceMargins. If provided, return sets will be plotted in original margins.}
 }
 \value{
 Matrix of realisations from the radial function of the return level-set X_t.

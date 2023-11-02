@@ -462,14 +462,16 @@ prob_estimation <- function(fitted.mod,post.sample,x_B,y_B){
 #' @param alpha Value in (0,1) for the (1-alpha)-simultaneous predictive interval of X_t.
 #' @param t Vector of return periods t.prime <= 1/(1-q) for the return level-sets X_{t.prime}.
 #' @param q.prime Vector of probabilities of the canonical return level-set level-sets X_{1/(1-q.prime)}.
+#' @param include.Qq Boolean: Include Q_q in the return sets if TRUE, do not include otherwise.
+#' @param LapTransf Object returned by the function toLaplaceMargins. If provided, return sets will be plotted in original margins.
 #'
 #' @return Matrix of realisations from the radial function of the return level-set X_t.
 #' @export
 #'
 #' @examples
-return_set <- function(fitted.mod,alpha=0.05,t=NA,q.prime=NA){
+return_set <- function(fitted.mod,alpha=0.05,t=NA,q.prime=NA,include.Qq=FALSE,LapTransf=NA){
   if(fitted.mod$options$excess.dist.fam=="GP"){
-    stop("GP exceedances probabilities not yet implemented")
+    stop("GP exceedances return sets not yet implemented")
   }
   if(inherits(t,"logical") & inherits(q.prime,"logical")){
     stop("Specify a value for t or q.prime.")
@@ -487,12 +489,22 @@ return_set <- function(fitted.mod,alpha=0.05,t=NA,q.prime=NA){
   }
 
   if(ncol(fitted.mod$X)==2){
-    ret_set <- return_set_2d(fitted.mod,alpha=alpha,t=t)
+    ret_set <- return_set_2d(fitted.mod,alpha=alpha,t=t,include.Qq=include.Qq)
+    if(!inherits(LapTransf,"logical")){
+      ret_set$X <- toOriginalMargins(fitted.mod$X,LapTransf)
+      for(i in 3:length(ret_set)){
+        for(j in 2:length(ret_set[[i]])){
+          ret_set[[i]][[j]] <- toOriginalMargins(ret_set[[i]][[j]],LapTransf)
+        }
+      }
+    }
+    return(ret_set)
   }else if(ncol(fitted.mod$X)>2){
     if(length(t)>1){
       stop("Specify only one value of t or q.prime for 3d plots.")
     }
     ret_set <- return_set_3d(fitted.mod,alpha=alpha,t=t)
+    return(ret_set)
   }else{
     return("X must be an n by p matrix, with p = 2.")
   }

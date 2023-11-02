@@ -777,16 +777,42 @@ chi_posterior <- function(fitted.mod,u,conditioning.marg=1,N.w=5000,transf.G=F){
 #' Title
 #'
 #' @param fitted.mod
+#' @param alpha
 #' @param t
-#' @param q.prime
+#' @param include.Qq
 #'
 #' @import excursions
 #' @return
 #' @noRd
 #'
 #' @examples
-return_set_2d <- function(fitted.mod,alpha=0.05,t){
-  ret_set_list <- list(t=t)
+return_set_2d <- function(fitted.mod,alpha=0.05,t,include.Qq=FALSE){
+
+  if(include.Qq==TRUE){
+    ret_set_list <- list(t=c(1/(1-fitted.mod$options$q),t),
+                         X=fitted.mod$X)
+  }else{
+    ret_set_list <- list(t=t,
+                         X=fitted.mod$X)
+  }
+
+  if(include.Qq==TRUE){
+    if(ncol(fitted.mod$Qq)==1){
+      ret_set_list[[3]] <- list(samp  = fitted.mod$Qq,
+                                mean  = pol2cart(cbind(fitted.mod$mesh$loc,apply(fitted.mod$Qq,2,mean))),
+                                lower = NA,
+                                upper = NA)
+    }else{
+      excurs <- simconf.mc(samples = fitted.mod$Qq,alpha = 0.95)#,u=0,type = "=")
+      low <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$a))
+      up <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$b))
+      ret_set_list[[3]] <- list(samp  = fitted.mod$Qq,
+                                mean  = pol2cart(cbind(fitted.mod$mesh$loc,apply(fitted.mod$Qq,2,mean))),
+                                lower = pol2cart(cbind(fitted.mod$mesh$loc,excurs$a)),
+                                upper = pol2cart(cbind(fitted.mod$mesh$loc,excurs$b)))
+    }
+  }
+
   for(k in 1:length(t)){
     K <- log(t[k]*(1-fitted.mod$options$q))
     n.mesh <- length(fitted.mod$mesh$loc)
@@ -803,10 +829,10 @@ return_set_2d <- function(fitted.mod,alpha=0.05,t){
 
     excurs <- simconf.mc(samples = t(post.ret.set),alpha = 1-alpha)
 
-    ret_set_list[[k+1]] <- list(samp  = post.ret.set,
-                                mean  = apply(post.ret.set,2,mean),
-                                lower = excurs$a,
-                                upper = excurs$b)
+    ret_set_list[[length(ret_set_list)+1]] <- list(samp  = post.ret.set,
+                                                   mean  = pol2cart(cbind(fitted.mod$mesh$loc,apply(post.ret.set,2,mean))),
+                                                   lower = pol2cart(cbind(fitted.mod$mesh$loc,excurs$a)),
+                                                   upper = pol2cart(cbind(fitted.mod$mesh$loc,excurs$b)))
   }
   return(ret_set_list)
 }
@@ -1253,44 +1279,37 @@ plot_return_bdry_2d <- function(fitted.mod,list_ret_sets,cex.pts=0.4,cex.axis=1.
 
   t <- rev(sort(list_ret_sets$t))
 
+  alpha.pts <- 0.8
+  col.pts <- col2rgb("grey35")[1]/255
   if(sum(xlim==c(0,0) & ylim==c(0,0))==2){
-    plot(fitted.mod$X,col="grey35",
+    plot(list_ret_sets$X,col=rgb(col.pts, col.pts, col.pts, alpha = alpha.pts),
          pch=16,cex=cex.pts,cex.lab=1.6,cex.axis=cex.axis,bty="n",xlab="",ylab="")
   }else{
-    plot(fitted.mod$X,col="grey35",xaxt="n",yaxt="n",xlim=xlim,ylim=ylim,
+    plot(list_ret_sets$X,col=rgb(col.pts, col.pts, col.pts, alpha = alpha.pts),
+         xaxt="n",yaxt="n",xlim=xlim,ylim=ylim,
          pch=16,cex=cex.pts,cex.lab=1.6,cex.axis=cex.axis,bty="n",xlab="",ylab="")
     axis(1, at = seq(xlim[1], xlim[2], by = by),cex.axis=cex.axis)
     axis(2, at = seq(ylim[1], ylim[2], by = by),cex.axis=cex.axis)
   }
 
-  alpha.col <- 0.4
-  cols <- rev(seq(col2rgb("grey20")[1],col2rgb("grey80")[1],length.out=length(t)+1)/255)
+  alpha.col <- 0.8
+  cols <- rev(seq(col2rgb("grey20")[1],col2rgb("grey80")[1],length.out=length(t))/255)
   for(i in length(t):1){
-    post.ret.set <- list_ret_sets[[i+1]]#return_set_2d(fitted.mod,t=t[i])
-    low <- pol2cart(cbind(fitted.mod$mesh$loc,post.ret.set$lower))
-    up <- pol2cart(cbind(fitted.mod$mesh$loc,post.ret.set$upper))
-    col <- cols[length(cols)-i+1]
-    polygon(up,col=rgb(col, col, col, alpha = alpha.col),
-            border=rgb(col, col, col, alpha = alpha.col))
-    polygon(low,col=rgb(1,1,1),border=rgb(col, col, col, alpha = alpha.col))
-
+    post.ret.set <- list_ret_sets[[i+2]]#return_set_2d(fitted.mod,t=t[i])
+    if(!inherits(post.ret.set$lower,"logical")&!inherits(post.ret.set$upper,"logical")){
+      low <- post.ret.set$lower
+      up <- post.ret.set$upper
+      col <- cols[length(cols)-i+1]
+      polygon(up,col=rgb(col, col, col, alpha = alpha.col),
+              border=rgb(col, col, col, alpha = alpha.col))
+      polygon(low,col=rgb(1,1,1),border=rgb(col, col, col, alpha = alpha.col))
+    }else{
+      meann <- post.ret.set$mean
+      col <- cols[length(cols)-i+1]
+      lines(meann,col=rgb(col, col, col, alpha = alpha.col))
+    }
   }
-  points(fitted.mod$X,col="grey35",pch=16,cex=cex.pts)
-
-  if(ncol(fitted.mod$Qq)==1){
-    mean_Qq <- apply(fitted.mod$Qq,1,mean,na.rm=T)
-    mean_Qq<- pol2cart(cbind(fitted.mod$mesh$loc,mean_Qq))
-    col <- cols[length(cols)]
-    polygon(mean_Qq,col=rgb(1,1,1),border=rgb(col, col, col, alpha = alpha.col))
-  }else{
-    excurs <- simconf.mc(samples = fitted.mod$Qq,alpha = 0.95)#,u=0,type = "=")
-    low <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$a))
-    up <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$b))
-
-    col <- cols[length(cols)]
-    polygon(up,col=rgb(col, col, col, alpha = alpha.col),border=rgb(col, col, col, alpha = alpha.col))
-    polygon(low,col=rgb(1,1,1),border=rgb(col, col, col, alpha = alpha.col))
-  }
+  points(list_ret_sets$X,col=rgb(col.pts, col.pts, col.pts, alpha = alpha.pts),pch=16,cex=cex.pts)
 }
 
 #' Title
@@ -1313,17 +1332,20 @@ plot_return_sets_2d <- function(fitted.mod,list_ret_sets,cex.pts=0.4,cex.axis=1.
 
   t <- rev(sort(list_ret_sets$t))
 
+  alpha.pts <- 0.8
+  col.pts <- col2rgb("grey35")[1]/255
   if(sum(xlim==c(0,0) & ylim==c(0,0))==2){
-    plot(fitted.mod$X,col="grey35",
+    plot(list_ret_sets$X,col=rgb(col.pts, col.pts, col.pts, alpha = alpha.pts),
          pch=16,cex=cex.pts,cex.lab=1.6,cex.axis=cex.axis,bty="n",xlab="",ylab="")
   }else{
-    plot(fitted.mod$X,col="grey35",xaxt="n",yaxt="n",xlim=xlim,ylim=ylim,
+    plot(list_ret_sets$X,col=rgb(col.pts, col.pts, col.pts, alpha = alpha.pts),
+         xaxt="n",yaxt="n",xlim=xlim,ylim=ylim,
          pch=16,cex=cex.pts,cex.lab=1.6,cex.axis=cex.axis,bty="n",xlab="",ylab="")
     axis(1, at = seq(xlim[1], xlim[2], by = by),cex.axis=cex.axis)
     axis(2, at = seq(ylim[1], ylim[2], by = by),cex.axis=cex.axis)
   }
 
-  alpha.col <- 0.4
+  alpha.col <- 0.6
   cols <- rev(seq(col2rgb("grey20")[1],col2rgb("grey80")[1],length.out=length(t)+1)/255)
 
   lim <- 40
@@ -1333,23 +1355,22 @@ plot_return_sets_2d <- function(fitted.mod,list_ret_sets,cex.pts=0.4,cex.axis=1.
           border=rgb(col, col, col, alpha = alpha.col))
 
   for(i in length(t):1){
-    post.ret.set <- list_ret_sets[[i+1]]#return_set_2d(fitted.mod,t=t[i])
+    post.ret.set <- list_ret_sets[[i+2]]#return_set_2d(fitted.mod,t=t[i])
     mean_post <- post.ret.set$mean
-    mean_post <- pol2cart(cbind(fitted.mod$mesh$loc,mean_post))
 
     polygon(mean_post,col="white",border="white")
     col <- cols[length(cols)-i+1]
     polygon(mean_post,col=rgb(col, col, col, alpha = alpha.col),
             border=rgb(col, col, col, alpha = alpha.col))
   }
-  points(fitted.mod$X,col="grey35",pch=16,cex=cex.pts)
+  points(list_ret_sets$X,col=rgb(col.pts, col.pts, col.pts, alpha = alpha.pts),pch=16,cex=cex.pts)
 
-  mean_Qq <- apply(fitted.mod$Qq,1,mean,na.rm=T)
-  mean_Qq<- pol2cart(cbind(fitted.mod$mesh$loc,mean_Qq))
+  # mean_Qq <- apply(fitted.mod$Qq,1,mean,na.rm=T)
+  # mean_Qq<- pol2cart(cbind(fitted.mod$mesh$loc,mean_Qq))
 
-  col <- cols[length(cols)]
+  # col <- cols[length(cols)]
   # polygon(mean_Qq,col=rgb(col, col, col, alpha = alpha.col),border=rgb(col, col, col, alpha = alpha.col))
-  polygon(mean_Qq,col="white",border=col)
+  # polygon(mean_Qq,col="white",border=col)
   # lines(mean_Qq)
 }
 
