@@ -31,7 +31,7 @@ Sigma <- rbind(c(1,0.8),
 X.N <- rmvnorm(N.X, mu, Sigma) # \boldsymbol{X}_N
 ``` 
 
-Here, the marginal distributions of the vector $`\boldsymbol{X}_N`$ are known and so is the true transformation to Laplace margins. When the marginal distributions are unknown, one can use the $`\texttt{geometricExtremes}`$ function toLaplaceMargins as follows:
+Here, the marginal distributions of the vector `X.N` are known and so is the true transformation to Laplace margins. When the marginal distributions are unknown, one can use the $`\texttt{geometricExtremes}`$ function toLaplaceMargins as follows:
 
 ``` r
 # Upper/lower row of upper/lower quantiles above/below which to fit GPD tails
