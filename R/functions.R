@@ -504,6 +504,14 @@ return_set <- function(fitted.mod,alpha=0.05,t=NA,q.prime=NA,include.Qq=FALSE,La
       stop("Specify only one value of t or q.prime for 3d plots.")
     }
     ret_set <- return_set_3d(fitted.mod,alpha=alpha,t=t)
+    if(!inherits(LapTransf,"logical")){
+      ret_set$X <- toOriginalMargins(fitted.mod$X,LapTransf)
+      for(i in 3:length(ret_set)){
+        for(j in 2:length(ret_set[[i]])){
+          ret_set[[i]][[j]] <- toOriginalMargins(ret_set[[i]][[j]],LapTransf)
+        }
+      }
+    }
     return(ret_set)
   }else{
     return("X must be an n by p matrix, with p = 2.")

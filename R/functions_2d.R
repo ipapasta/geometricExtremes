@@ -992,18 +992,24 @@ dG_transformation <- function(fitted.mod){
 #' Title
 #'
 #' @param fitted.mod
+#' @param Transf.G
 #'
 #' @return
 #' @noRd
 #'
 #' @examples
-eta_posterior_2d <- function(fitted.mod){
-  etas <- rep(NA,length(fitted.mod$G)*length(fitted.mod$G[[1]]))
+eta_posterior_2d <- function(fitted.mod,Transf.G=TRUE){
+  if(Transf.G==TRUE){
+    G <- dG_transformation(fitted.mod)
+  }else{
+    G <- fitted.mod$G
+  }
+  etas <- rep(NA,length(G)*length(G[[1]]))
   A <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=pi/4)$proj$A
   cnt <- 1
-  for(i in 1:length(fitted.mod$G)){
-    for(j in 1:length(fitted.mod$G[[1]])){
-      r <- as.vector(A %*%fitted.mod$G[[i]][[j]])
+  for(i in 1:length(G)){
+    for(j in 1:length(G[[1]])){
+      r <- as.vector(A %*%G[[i]][[j]])
       etas[cnt] <- r*cos(pi/4)
       cnt <- cnt + 1
     }

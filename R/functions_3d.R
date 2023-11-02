@@ -329,7 +329,8 @@ fit_GL_3d <- function(fitted.Qq,config){
 #'
 #' @examples
 return_set_3d <- function(fitted.mod,alpha=0.05,t){
-  ret_set_list <- list(t=t)
+  ret_set_list <- list(t=t,
+                       X=fitted.mod$X)
   for(k in 1:length(t)){
     K <- log(t[k]*(1-fitted.mod$options$q))
     n.mesh <- nrow(fitted.mod$mesh$loc)
@@ -346,10 +347,10 @@ return_set_3d <- function(fitted.mod,alpha=0.05,t){
 
     excurs <- simconf.mc(samples = t(post.ret.set),alpha = 1-alpha)
 
-    ret_set_list[[k+1]] <- list(samp  = post.ret.set,
-                                mean  = apply(post.ret.set,2,mean),
-                                lower = excurs$a,
-                                upper = excurs$b)
+    ret_set_list[[k+2]] <- list(samp  = post.ret.set,
+                                mean  = fitted.mod$mesh$loc*apply(post.ret.set,2,mean),
+                                lower = fitted.mod$mesh$loc*excurs$a,
+                                upper = fitted.mod$mesh$loc*excurs$b)
   }
   return(ret_set_list)
 }
@@ -537,13 +538,13 @@ plot_return_bdry_3d <- function(fitted.mod,list_ret_sets,surface="mean",cex.pts=
            xlim=xyzlim,ylim=xyzlim,zlim=xyzlim)
   }
 
-  post.ret.set <- list_ret_sets[[2]]
+  post.ret.set <- list_ret_sets[[3]]
   if(surface=="mean"){
-    partial.G <- post.ret.set$mean
+    partial.G <- apply(post.ret.set$mean,1,function(xx) sqrt(sum(xx^2)))
   }else if(surface=="lower"){
-    partial.G <- post.ret.set$lower
+    partial.G <- apply(post.ret.set$lower,1,function(xx) sqrt(sum(xx^2)))
   }else if(surface=="upper"){
-    partial.G <- post.ret.set$upper
+    partial.G <- apply(post.ret.set$upper,1,function(xx) sqrt(sum(xx^2)))
   }
 
   N <- 100
