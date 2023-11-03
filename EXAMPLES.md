@@ -261,16 +261,29 @@ median(ps[,2])
 rm(list=ls())
 library(mvtnorm)
 library(rmutil)
+library(geometricExtremes)
 
+set.seed(44)
 mu <- c(0,0,0)
 Sigma <- rbind(c(1,0.8,0.7), c(0.8,1,0.6),c(0.7,0.6,1))
-X <- rmutil::qlaplace(pnorm(rmvnorm(5000, mu, Sigma),0,1))
+X.N <- rmvnorm(5000, mu, Sigma)
 ```
+
+``` r
+# Upper/lower row of upper/lower quantiles above/below which to fit GPD tails
+q <- rbind(c(0.90,0.90,0.90),
+           c(0.10,0.10,0.10))
+
+# Perform transformation of marginal distributions of X.N to Laplace
+LapTransf <- toLaplaceMargins(X.N,q)
+LapTransf$X.L # Observed data transformed to Laplace margins
+```
+
 
 ### Model fitting
 
 ``` r
-options <- set.options(X                = X,               
+options <- set.options(X                = LapTransf$X.L,               
                        excess.dist.fam  = "E",       
                        W.data           = "ExcOnly",                
                        W.model          = "M3",    
@@ -298,7 +311,7 @@ To obtain posterior realisations from $`\mathcal{Q}_q`$ and $`\mathcal{G}`$, one
 
 ``` r
 # Fit the quantile set Q_q
-fitted.Qq <- fit_Qq(X,options,config,return_fitted_obj=F)
+fitted.Qq <- fit_Qq(LapTransf$X.L,options,config,return_fitted_obj=F)
 
 # Fit the sets G and L
 fitted.mod <- fit_GL(fitted.Qq,config)
