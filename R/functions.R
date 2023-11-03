@@ -58,7 +58,7 @@ set.options <- function(X,excess.dist.fam,W.model,W.data,use.mean.Qq,q,alpha,N.Q
   }
 
   if(excess.dist.fam=="GP"){
-    stop("Functionality available very soon.")
+    # stop("Functionality available very soon.")
     if(missing(alpha)){
       stop("Specify value of alpha in (0,1).")
     }
@@ -472,7 +472,7 @@ prob_estimation <- function(fitted.mod,post.sample,x_B,y_B){
 #' @examples
 return_set <- function(fitted.mod,alpha=0.05,t=NA,q.prime=NA,include.Qq=FALSE,LapTransf=NA){
   if(fitted.mod$options$excess.dist.fam=="GP"){
-    stop("GP exceedances return sets not yet implemented")
+    stop("Return sets for GP exceedances not yet implemented.")
   }
   if(inherits(t,"logical") & inherits(q.prime,"logical")){
     stop("Specify a value for t or q.prime.")
