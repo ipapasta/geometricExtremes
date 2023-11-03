@@ -189,6 +189,7 @@ options <- set.options(X                = X.t,
                        W.data           = "ExcOnly",
                        W.model          = "M3",
                        q                = 0.9,
+		       use.mean.Qq      = FALSE,
 		       alpha            = 0.5, # GP specific parameter
                        N.Qq             = 20,
                        N.GW             = 50,
