@@ -491,32 +491,30 @@ return_set <- function(fitted.mod,alpha=0.05,t=NA,q.prime=NA,include.Qq=FALSE,La
 
   if(ncol(fitted.mod$X)==2){
     ret_set <- return_set_2d(fitted.mod,alpha=alpha,t=t,include.Qq=include.Qq)
-    ret_set_orig <- NA
     if(!inherits(LapTransf,"logical")){
-      ret_set_orig <- ret_set
-      ret_set_orig$X <- toOriginalMargins(fitted.mod$X,LapTransf)
-      for(i in 3:length(ret_set_orig)){
-        for(j in 2:length(ret_set_orig[[i]])){
-          ret_set_orig[[i]][[j]] <- toOriginalMargins(ret_set_orig[[i]][[j]],LapTransf)
+      ret_set$pars$marginals <- "Original"
+      ret_set$X <- toOriginalMargins(fitted.mod$X,LapTransf)
+      for(i in 3:length(ret_set)){
+        for(j in 2:length(ret_set[[i]])){
+          ret_set[[i]][[j]] <- toOriginalMargins(ret_set[[i]][[j]],LapTransf)
         }
       }
     }
-    return(list(Laplace=ret_set,Original=ret_set_orig))
+    return(ret_set)
   }else if(ncol(fitted.mod$X)>2){
     if(length(t)>1){
       stop("Specify only one value of t or q.prime for 3d plots.")
     }
     ret_set <- return_set_3d(fitted.mod,alpha=alpha,t=t)
-    ret_set_orig <- NA
     if(!inherits(LapTransf,"logical")){
-      stop("Not available yet.")
-      ret_set_orig <- ret_set
-      ret_set_orig$X <- toOriginalMargins(fitted.mod$X,LapTransf)
-      for(i in 2:length(ret_set_orig[[3]])){
-        ret_set_orig[[3]][[i]] <- toOriginalMargins(ret_set_orig[[3]][[i]],LapTransf)
+      # stop("Not available yet.")
+      ret_set$pars$marginals <- "Original"
+      ret_set$X <- toOriginalMargins(fitted.mod$X,LapTransf)
+      for(i in 2:length(ret_set[[3]])){
+        ret_set[[3]][[i]] <- toOriginalMargins(ret_set[[3]][[i]],LapTransf)
       }
     }
-    return(list(Laplace=ret_set,Original=ret_set_orig))
+    return(ret_set)
   }else{
     return("X must be an n by p matrix, with p = 2.")
   }

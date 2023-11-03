@@ -329,8 +329,10 @@ fit_GL_3d <- function(fitted.Qq,config){
 #'
 #' @examples
 return_set_3d <- function(fitted.mod,alpha=0.05,t){
-  ret_set_list <- list(t=t,
+  ret_set_list <- list(pars=list(t=t,
+                                 marginals = "Laplace"),
                        X=fitted.mod$X)
+
   for(k in 1:length(t)){
     K <- log(t[k]*(1-fitted.mod$options$q))
     n.mesh <- nrow(fitted.mod$mesh$loc)
@@ -529,7 +531,7 @@ plot_G_3d <- function(fitted.mod,alpha=0.05,surface,xlab=expression(X[1]),ylab=e
 #' @examples
 plot_return_bdry_3d <- function(fitted.mod,list_ret_sets,surface="mean",cex.pts=0.4,cex.axis=1.4,xyzlim=c(0,0),xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3])){
 
-  t <- rev(sort(list_ret_sets$t))
+  t <- rev(sort(list_ret_sets$pars$t))
 
   if(sum(xyzlim==c(0,0))==2){
     plot3d(list_ret_sets$X,xlab=xlab,ylab=ylab,zlab=zlab)
@@ -539,25 +541,40 @@ plot_return_bdry_3d <- function(fitted.mod,list_ret_sets,surface="mean",cex.pts=
   }
 
   post.ret.set <- list_ret_sets[[3]]
-  if(surface=="mean"){
-    partial.G <- apply(post.ret.set$mean,1,function(xx) sqrt(sum(xx^2)))
-  }else if(surface=="lower"){
-    partial.G <- apply(post.ret.set$lower,1,function(xx) sqrt(sum(xx^2)))
-  }else if(surface=="upper"){
-    partial.G <- apply(post.ret.set$upper,1,function(xx) sqrt(sum(xx^2)))
+
+  if(list_ret_sets$pars$marginals=="Laplace"){
+    if(surface=="mean"){
+      partial.G <- apply(post.ret.set$mean,1,function(xx) sqrt(sum(xx^2)))
+    }else if(surface=="lower"){
+      partial.G <- apply(post.ret.set$lower,1,function(xx) sqrt(sum(xx^2)))
+    }else if(surface=="upper"){
+      partial.G <- apply(post.ret.set$upper,1,function(xx) sqrt(sum(xx^2)))
+    }
+
+    N <- 100
+    locs.polar     <- as.matrix(data.frame(expand.grid(theta=seq(-pi, pi, len=N), phi = seq(-pi/2, pi/2, len=N)), r=rep(1, 10*10)))
+    locs.cartesian <- sph2cart(locs.polar)
+
+    A <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=locs.cartesian)$proj$A
+    partial.G.on.grid <- as.vector(A %*% partial.G)
+    partial.G.m <- matrix(partial.G.on.grid, nrow=N, ncol=N)
+
+    surface3d(x=locs.cartesian[,1]*partial.G.m,
+              y=locs.cartesian[,2]*partial.G.m,
+              z=locs.cartesian[,3]*partial.G.m, alpha=.3, col="gray")
+  }else{
+    if(surface=="mean"){
+      lines3d(post.ret.set$mean,col="red")
+    }else if(surface=="lower"){
+      lines3d(post.ret.set$lower,col="red")
+    }else if(surface=="upper"){
+      lines3d(post.ret.set$upper,col="red")
+    }
   }
 
-  N <- 100
-  locs.polar     <- as.matrix(data.frame(expand.grid(theta=seq(-pi, pi, len=N), phi = seq(-pi/2, pi/2, len=N)), r=rep(1, 10*10)))
-  locs.cartesian <- sph2cart(locs.polar)
-
-  A <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=locs.cartesian)$proj$A
-  partial.G.on.grid <- as.vector(A %*% partial.G)
-  partial.G.m <- matrix(partial.G.on.grid, nrow=N, ncol=N)
-
-  surface3d(x=locs.cartesian[,1]*partial.G.m,
-            y=locs.cartesian[,2]*partial.G.m,
-            z=locs.cartesian[,3]*partial.G.m, alpha=.3, col="gray")
+  # if(){
+  #   lines3d(ret_sets[[3]]$mean,col="red")
+  # }
 
   # partial.G.m <- matrix(partial.G, nrow=N, ncol=N)
   # surface3d(x=fitted.mod$mesh$loc[,1]*partial.G.m,

@@ -789,10 +789,12 @@ chi_posterior <- function(fitted.mod,u,conditioning.marg=1,N.w=5000,transf.G=F){
 return_set_2d <- function(fitted.mod,alpha=0.05,t,include.Qq=FALSE){
 
   if(include.Qq==TRUE){
-    ret_set_list <- list(t=c(1/(1-fitted.mod$options$q),t),
+    ret_set_list <- list(pars=list(t=c(1/(1-fitted.mod$options$q),t),
+                                   marginals = "Laplace"),
                          X=fitted.mod$X)
   }else{
-    ret_set_list <- list(t=t,
+    ret_set_list <- list(pars=list(t=t,
+                                   marginals = "Laplace"),
                          X=fitted.mod$X)
   }
 
@@ -1283,7 +1285,7 @@ plot_W_2d <- function(fitted.mod,alpha,xylim,main="",mid.gap=0.1, txt.gap=0.02,c
 #' @examples
 plot_return_bdry_2d <- function(fitted.mod,list_ret_sets,cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim=c(0,0),by=2){
 
-  t <- rev(sort(list_ret_sets$t))
+  t <- rev(sort(list_ret_sets$pars$t))
 
   alpha.pts <- 0.8
   col.pts <- col2rgb("grey35")[1]/255
@@ -1336,7 +1338,7 @@ plot_return_bdry_2d <- function(fitted.mod,list_ret_sets,cex.pts=0.4,cex.axis=1.
 #' @examples
 plot_return_sets_2d <- function(fitted.mod,list_ret_sets,cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim=c(0,0),by=2){
 
-  t <- rev(sort(list_ret_sets$t))
+  t <- rev(sort(list_ret_sets$pars$t))
 
   alpha.pts <- 0.8
   col.pts <- col2rgb("grey35")[1]/255
