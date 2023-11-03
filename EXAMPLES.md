@@ -53,6 +53,7 @@ options <- set.options(X                = LapTransf$X.L,
                        excess.dist.fam  = "E",
                        W.data           = "ExcOnly",
                        W.model          = "M3",
+		       use.mean.Qq      = FALSE
                        q                = 0.9, 
                        N.Qq             = 20,
                        N.GW             = 50,
