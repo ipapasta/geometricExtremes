@@ -805,7 +805,7 @@ return_set_2d <- function(fitted.mod,alpha=0.05,t,include.Qq=FALSE){
                                 lower = NA,
                                 upper = NA)
     }else{
-      excurs <- simconf.mc(samples = fitted.mod$Qq,alpha = 0.95)#,u=0,type = "=")
+      excurs <- simconf.mc(samples = fitted.mod$Qq,alpha = 1-alpha)#,u=0,type = "=")
       low <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$a))
       up <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$b))
       ret_set_list[[3]] <- list(samp  = fitted.mod$Qq,
