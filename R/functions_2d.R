@@ -805,7 +805,7 @@ return_set_2d <- function(fitted.mod,alpha=0.05,t,include.Qq=FALSE){
                                 lower = NA,
                                 upper = NA)
     }else{
-      excurs <- simconf.mc(samples = fitted.mod$Qq,alpha = 1-alpha)#,u=0,type = "=")
+      excurs <- simconf.mc(samples = fitted.mod$Qq,alpha = alpha)#,u=0,type = "=")
       low <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$a))
       up <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$b))
       ret_set_list[[3]] <- list(samp  = fitted.mod$Qq,
@@ -829,7 +829,7 @@ return_set_2d <- function(fitted.mod,alpha=0.05,t,include.Qq=FALSE){
       }
     }
 
-    excurs <- simconf.mc(samples = t(post.ret.set),alpha = 1-alpha)
+    excurs <- simconf.mc(samples = t(post.ret.set),alpha = alpha)
 
     ret_set_list[[length(ret_set_list)+1]] <- list(samp  = post.ret.set,
                                                    mean  = pol2cart(cbind(fitted.mod$mesh$loc,apply(post.ret.set,2,mean))),
@@ -1055,7 +1055,7 @@ plot_Qq_2d <- function(fitted.Qq,alpha,cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim
     col <- col2rgb("grey30")/255
     polygon(meann,col=rgb(1,1,1),border=rgb(col[1], col[2], col[3], alpha = 0.3))
   }else{
-    excurs <- simconf.mc(samples = fitted.Qq$Qq,alpha = 1-alpha)
+    excurs <- simconf.mc(samples = fitted.Qq$Qq,alpha = alpha)
     low <- pol2cart(cbind(fitted.Qq$mesh$loc,excurs$a))
     upp <- pol2cart(cbind(fitted.Qq$mesh$loc,excurs$b))
 
@@ -1117,7 +1117,7 @@ plot_G_2d <- function(fitted.mod,alpha,mean_med="mean",cex.txt=1.4,cex.pts=0.6,t
   emp.quants <- apply(all.est.G,1,quantile,probs=c(0.025,0.5,0.975),na.rm=T)
   mean.G <- apply(all.est.G,1,mean,na.rm=T)
 
-  excurs <- simconf.mc(samples = all.est.G,alpha = 1-alpha)
+  excurs <- simconf.mc(samples = all.est.G,alpha = alpha)
   low <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$a))
   upp <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$b))
 
@@ -1217,7 +1217,7 @@ plot_W_2d <- function(fitted.mod,alpha,xylim,main="",mid.gap=0.1, txt.gap=0.02,c
   # low <- pol2cart(cbind(mesh,apply(m,2,quantile,probs=c(0.025))+mid.gap))
   # up <- pol2cart(cbind(mesh,apply(m,2,quantile,probs=c(0.975))+mid.gap))
 
-  excurs <- simconf.mc(samples = t(m),alpha = 1-alpha)
+  excurs <- simconf.mc(samples = t(m),alpha = alpha)
   low <- pol2cart(cbind(mesh,excurs$a+mid.gap))
   up <- pol2cart(cbind(mesh,excurs$b+mid.gap))
 

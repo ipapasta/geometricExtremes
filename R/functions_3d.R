@@ -347,7 +347,7 @@ return_set_3d <- function(fitted.mod,alpha=0.05,t){
       }
     }
 
-    excurs <- simconf.mc(samples = t(post.ret.set),alpha = 1-alpha)
+    excurs <- simconf.mc(samples = t(post.ret.set),alpha = alpha)
 
     ret_set_list[[k+2]] <- list(samp  = post.ret.set,
                                 mean  = fitted.mod$mesh$loc*apply(post.ret.set,2,mean),
@@ -406,10 +406,10 @@ plot_Qq_3d <- function(fitted.Qq,surface="mean",alpha=0.05,xlab=expression(X[1])
   if(surface=="mean"){
     partial.Qq <- apply(Qqs,1,mean)
   }else if(surface=="lower"){
-    excurs <- simconf.mc(samples = Qqs,alpha = 1-alpha)
+    excurs <- simconf.mc(samples = Qqs,alpha = alpha)
     partial.Qq <- excurs$a #apply(all.Gs,2,function(xx) quantile(xx,0.025))
   }else if(surface=="upper"){
-    excurs <- simconf.mc(samples = Qqs,alpha = 1-alpha)
+    excurs <- simconf.mc(samples = Qqs,alpha = alpha)
     partial.Qq <- excurs$b #apply(all.Gs,2,function(xx) quantile(xx,0.975))
   }
 
@@ -486,10 +486,10 @@ plot_G_3d <- function(fitted.mod,alpha=0.05,surface,xlab=expression(X[1]),ylab=e
   if(surface=="mean"){
     partial.G <- apply(all.Gs,2,mean)
   }else if(surface=="lower"){
-    excurs <- simconf.mc(samples = t(all.Gs),alpha = 1-alpha)
+    excurs <- simconf.mc(samples = t(all.Gs),alpha = alpha)
     partial.G <- excurs$a #apply(all.Gs,2,function(xx) quantile(xx,0.025))
   }else if(surface=="upper"){
-    excurs <- simconf.mc(samples = t(all.Gs),alpha = 1-alpha)
+    excurs <- simconf.mc(samples = t(all.Gs),alpha = alpha)
     partial.G <- excurs$b #apply(all.Gs,2,function(xx) quantile(xx,0.975))
   }
 
