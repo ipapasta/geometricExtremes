@@ -577,9 +577,9 @@ eta_posterior <- function(fitted.mod){
 #' @examples
 plot_Qq <- function(fitted.Qq,alpha=0.05,surface3d="mean",cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim=c(0,0),by=2){
   if(ncol(fitted.Qq$X)==2){
-    plot_Qq_2d(fitted.Qq,alpha,cex.pts=cex.pts,cex.axis=cex.axis,xlim=xlim,ylim=ylim,by=by)
+    plot_Qq_2d(fitted.Qq,alpha=alpha,cex.pts=cex.pts,cex.axis=cex.axis,xlim=xlim,ylim=ylim,by=by)
   }else if(ncol(fitted.Qq$X)==3){
-    plot_Qq_3d(fitted.Qq,surface3d,alpha,xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3]))
+    plot_Qq_3d(fitted.Qq,surface3d,alpha=alpha,xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3]))
   }
 }
 

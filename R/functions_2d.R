@@ -1153,7 +1153,9 @@ plot_G_2d <- function(fitted.mod,alpha,mean_med="mean",cex.txt=1.4,cex.pts=0.6,t
       mean_med <- pol2cart(cbind(fitted.mod$mesh$loc,emp.quants[2,]))
     }
 
-    lims <- c(floor(min(mean_med)),ceiling(max(mean_med)))*1.1
+    lims.low <- floor(min(upp))
+    lims.up <- ceiling(max(upp))
+    lims <- c(lims.low,lims.up)*1.1
 
     plot(mean_med,col="grey35",xaxt="n",yaxt="n",xlim=lims,ylim=lims,
          pch=16,cex=cex.pts,cex.lab=1.6,cex.axis=cex.axis,bty="n",xlab="",ylab="")
