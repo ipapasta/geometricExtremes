@@ -14,7 +14,7 @@
 fit_Qq_2d <- function(X,options,config,return_fitted_obj=F){
 
   if(config$progress){
-    prog <- paste0("Begin quantile regression")
+    prog <- paste0("Begin quantile regression: ", config$file.nm)
     write.table(prog, file = paste0(config$save.path,"Progression.txt"))
   }
 
@@ -780,13 +780,14 @@ chi_posterior <- function(fitted.mod,u,conditioning.marg=1,N.w=5000,transf.G=F){
 #' @param alpha
 #' @param t
 #' @param include.Qq
+#' @param conf
 #'
 #' @import excursions
 #' @return
 #' @noRd
 #'
 #' @examples
-return_set_2d <- function(fitted.mod,alpha=0.05,t,include.Qq=FALSE){
+return_set_2d <- function(fitted.mod,alpha=0.05,t,conf="marg",include.Qq=FALSE){
 
   if(include.Qq==TRUE){
     ret_set_list <- list(pars=list(t=c(1/(1-fitted.mod$options$q),t),
@@ -806,12 +807,19 @@ return_set_2d <- function(fitted.mod,alpha=0.05,t,include.Qq=FALSE){
                                 upper = NA)
     }else{
       excurs <- simconf.mc(samples = fitted.mod$Qq,alpha = alpha)#,u=0,type = "=")
-      low <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$a))
-      up <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$b))
+
+      if(conf=="sim"){
+        low <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$a))
+        up <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$b))
+      }else if(conf=="marg"){
+        low <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$a.marg))
+        up <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$b.marg))
+      }
+
       ret_set_list[[3]] <- list(samp  = fitted.mod$Qq,
                                 mean  = pol2cart(cbind(fitted.mod$mesh$loc,apply(fitted.mod$Qq,2,mean))),
-                                lower = pol2cart(cbind(fitted.mod$mesh$loc,excurs$a)),
-                                upper = pol2cart(cbind(fitted.mod$mesh$loc,excurs$b)))
+                                lower = low,
+                                upper = up)
     }
   }
 
@@ -830,11 +838,17 @@ return_set_2d <- function(fitted.mod,alpha=0.05,t,include.Qq=FALSE){
     }
 
     excurs <- simconf.mc(samples = t(post.ret.set),alpha = alpha)
-
+    if(conf=="sim"){
+      low <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$a))
+      up <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$b))
+    }else if(conf=="marg"){
+      low <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$a.marg))
+      up <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$b.marg))
+    }
     ret_set_list[[length(ret_set_list)+1]] <- list(samp  = post.ret.set,
                                                    mean  = pol2cart(cbind(fitted.mod$mesh$loc,apply(post.ret.set,2,mean))),
-                                                   lower = pol2cart(cbind(fitted.mod$mesh$loc,excurs$a)),
-                                                   upper = pol2cart(cbind(fitted.mod$mesh$loc,excurs$b)))
+                                                   lower = low,
+                                                   upper = up)
   }
   return(ret_set_list)
 }
@@ -1036,7 +1050,7 @@ eta_posterior_2d <- function(fitted.mod,Transf.G=TRUE){
 #' @noRd
 #'
 #' @examples
-plot_Qq_2d <- function(fitted.Qq,alpha,cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim=c(0,0),by=2){
+plot_Qq_2d <- function(fitted.Qq,alpha,conf="marg",cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim=c(0,0),by=2){
 
   mean.Qq <- apply(fitted.Qq$Qq,1,mean,na.rm=T)
   meann <- pol2cart(cbind(fitted.Qq$mesh$loc,mean.Qq))
@@ -1056,8 +1070,13 @@ plot_Qq_2d <- function(fitted.Qq,alpha,cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim
     polygon(meann,col=rgb(1,1,1),border=rgb(col[1], col[2], col[3], alpha = 0.3))
   }else{
     excurs <- simconf.mc(samples = fitted.Qq$Qq,alpha = alpha)
-    low <- pol2cart(cbind(fitted.Qq$mesh$loc,excurs$a))
-    upp <- pol2cart(cbind(fitted.Qq$mesh$loc,excurs$b))
+    if(conf=="sim"){
+      low <- pol2cart(cbind(fitted.Qq$mesh$loc,excurs$a))
+      upp <- pol2cart(cbind(fitted.Qq$mesh$loc,excurs$b))
+    }else if(conf=="marg"){
+      low <- pol2cart(cbind(fitted.Qq$mesh$loc,excurs$a.marg))
+      upp <- pol2cart(cbind(fitted.Qq$mesh$loc,excurs$b.marg))
+    }
 
     col <- col2rgb("grey30")/255
     polygon(upp,col=rgb(col[1], col[2], col[3], alpha = 0.3),
@@ -1089,6 +1108,7 @@ plot_Qq_2d <- function(fitted.Qq,alpha,cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim
 #' @param alpha
 #' @param cex.axis
 #' @param by
+#' @param conf
 #'
 #' @import excursions
 #' @import grDevices
@@ -1097,7 +1117,7 @@ plot_Qq_2d <- function(fitted.Qq,alpha,cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim
 #' @noRd
 #'
 #' @examples
-plot_G_2d <- function(fitted.mod,alpha,mean_med="mean",cex.txt=1.4,cex.pts=0.6,transf.G = F,cex.axis=1.4,by=2){
+plot_G_2d <- function(fitted.mod,alpha,conf="marg",mean_med="mean",cex.txt=1.4,cex.pts=0.6,transf.G = F,cex.axis=1.4,by=2){
   if(transf.G==T){
     G <- fitted.mod$G_T
   }else{
@@ -1118,8 +1138,14 @@ plot_G_2d <- function(fitted.mod,alpha,mean_med="mean",cex.txt=1.4,cex.pts=0.6,t
   mean.G <- apply(all.est.G,1,mean,na.rm=T)
 
   excurs <- simconf.mc(samples = all.est.G,alpha = alpha)
-  low <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$a))
-  upp <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$b))
+
+  if(conf=="sim"){
+    low <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$a))
+    upp <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$b))
+  }else if(conf=="marg"){
+    low <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$a.marg))
+    upp <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$b.marg))
+  }
 
   if(fitted.mod$options$excess.dist.fam=="E"){
     plot(fitted.mod$X/log(nrow(fitted.mod$X)/2),col="grey35",
@@ -1179,6 +1205,7 @@ plot_G_2d <- function(fitted.mod,alpha,mean_med="mean",cex.txt=1.4,cex.pts=0.6,t
 #' @param cex.txt
 #' @param exconly
 #' @param alpha
+#' @param conf
 #'
 #' @import pracma
 #' @import excursions
@@ -1188,7 +1215,7 @@ plot_G_2d <- function(fitted.mod,alpha,mean_med="mean",cex.txt=1.4,cex.pts=0.6,t
 #' @noRd
 #'
 #' @examples
-plot_W_2d <- function(fitted.mod,alpha,xylim,main="",mid.gap=0.1, txt.gap=0.02,cex.txt=1.4,exconly=F){
+plot_W_2d <- function(fitted.mod,alpha,conf="marg",xylim,main="",mid.gap=0.1, txt.gap=0.02,cex.txt=1.4,exconly=F){
 
   X <- fitted.mod$X
   R <- apply(X, 1, function(x) sqrt(sum(x^2)))
@@ -1220,8 +1247,13 @@ plot_W_2d <- function(fitted.mod,alpha,xylim,main="",mid.gap=0.1, txt.gap=0.02,c
   # up <- pol2cart(cbind(mesh,apply(m,2,quantile,probs=c(0.975))+mid.gap))
 
   excurs <- simconf.mc(samples = t(m),alpha = alpha)
-  low <- pol2cart(cbind(mesh,excurs$a+mid.gap))
-  up <- pol2cart(cbind(mesh,excurs$b+mid.gap))
+  if(conf=="sim"){
+    low <- pol2cart(cbind(mesh,excurs$a+mid.gap))
+    up <- pol2cart(cbind(mesh,excurs$b+mid.gap))
+  }else if(conf=="marg"){
+    low <- pol2cart(cbind(mesh,excurs$a.marg+mid.gap))
+    up <- pol2cart(cbind(mesh,excurs$b.marg+mid.gap))
+  }
 
   if(xylim==0){
     xylim <- max(c(excurs$b,h$density))

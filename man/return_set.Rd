@@ -7,6 +7,7 @@
 return_set(
   fitted.mod,
   alpha = 0.05,
+  conf = "marg",
   t = NA,
   q.prime = NA,
   include.Qq = FALSE,
@@ -17,6 +18,8 @@ return_set(
 \item{fitted.mod}{Object returned from the function fit_GL.}
 
 \item{alpha}{Value in (0,1) for the (1-alpha)-simultaneous predictive interval of X_t.}
+
+\item{conf}{Choose between simultaneous ("sim") and marginal ("marg") predictive intervals.}
 
 \item{t}{Vector of return periods t.prime <= 1/(1-q) for the return level-sets X_{t.prime}.}
 

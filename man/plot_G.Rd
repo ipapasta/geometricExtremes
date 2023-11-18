@@ -7,6 +7,7 @@
 plot_G(
   fitted.mod,
   alpha = 0.05,
+  conf = "marg",
   surface3d = "mean",
   surf.col = "grey",
   cex.pts = 0.4,
@@ -20,6 +21,8 @@ plot_G(
 \item{fitted.mod}{Object returned by the function fit_GL.}
 
 \item{alpha}{Value in (0,1) for the (1-alpha)-simultaneous predictive interval of G.}
+
+\item{conf}{Choose between simultaneous ("sim") and marginal ("marg") predictive intervals.}
 
 \item{surface3d}{Surface (3d) to plot between the mean ("mean"), and simultaneous predictive interval bounds ("lower" or "upper").}
 

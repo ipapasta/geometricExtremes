@@ -461,6 +461,7 @@ prob_estimation <- function(fitted.mod,post.sample,x_B,y_B){
 #'
 #' @param fitted.mod Object returned from the function fit_GL.
 #' @param alpha Value in (0,1) for the (1-alpha)-simultaneous predictive interval of X_t.
+#' @param conf Choose between simultaneous ("sim") and marginal ("marg") predictive intervals.
 #' @param t Vector of return periods t.prime <= 1/(1-q) for the return level-sets X_{t.prime}.
 #' @param q.prime Vector of probabilities of the canonical return level-set level-sets X_{1/(1-q.prime)}.
 #' @param include.Qq Boolean: Include Q_q in the return sets if TRUE, do not include otherwise.
@@ -470,7 +471,7 @@ prob_estimation <- function(fitted.mod,post.sample,x_B,y_B){
 #' @export
 #'
 #' @examples
-return_set <- function(fitted.mod,alpha=0.05,t=NA,q.prime=NA,include.Qq=FALSE,LapTransf=NA){
+return_set <- function(fitted.mod,alpha=0.05,conf="marg",t=NA,q.prime=NA,include.Qq=FALSE,LapTransf=NA){
   if(fitted.mod$options$excess.dist.fam=="GP"){
     stop("Return sets for GP exceedances not yet implemented.")
   }
@@ -490,7 +491,7 @@ return_set <- function(fitted.mod,alpha=0.05,t=NA,q.prime=NA,include.Qq=FALSE,La
   }
 
   if(ncol(fitted.mod$X)==2){
-    ret_set <- return_set_2d(fitted.mod,alpha=alpha,t=t,include.Qq=include.Qq)
+    ret_set <- return_set_2d(fitted.mod,alpha=alpha,conf=conf,t=t,include.Qq=include.Qq)
     if(!inherits(LapTransf,"logical")){
       ret_set$pars$marginals <- "Original"
       ret_set$X <- toOriginalMargins(fitted.mod$X,LapTransf)
@@ -505,7 +506,7 @@ return_set <- function(fitted.mod,alpha=0.05,t=NA,q.prime=NA,include.Qq=FALSE,La
     if(length(t)>1){
       stop("Specify only one value of t or q.prime for 3d plots.")
     }
-    ret_set <- return_set_3d(fitted.mod,alpha=alpha,t=t)
+    ret_set <- return_set_3d(fitted.mod,alpha=alpha,conf=conf,t=t)
     if(!inherits(LapTransf,"logical")){
       # stop("Not available yet.")
       ret_set$pars$marginals <- "Original"
@@ -564,6 +565,7 @@ eta_posterior <- function(fitted.mod){
 #'
 #' @param fitted.Qq Object returned by the function fit_Qq.
 #' @param alpha Value in (0,1) for the (1-alpha)-simultaneous predictive interval of Q_q.
+#' @param conf Choose between simultaneous ("sim") and marginal ("marg") predictive intervals.
 #' @param surface3d Surface to plot between the mean ("mean"), and simultaneous predictive interval bounds ("lower" or "upper").
 #' @param cex.pts Size of points representing exceedances of Q_q.
 #' @param cex.axis Size of axes' labels.
@@ -575,11 +577,11 @@ eta_posterior <- function(fitted.mod){
 #' @export
 #'
 #' @examples
-plot_Qq <- function(fitted.Qq,alpha=0.05,surface3d="mean",cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim=c(0,0),by=2){
+plot_Qq <- function(fitted.Qq,alpha=0.05,conf="marg",surface3d="mean",cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim=c(0,0),by=2){
   if(ncol(fitted.Qq$X)==2){
-    plot_Qq_2d(fitted.Qq,alpha=alpha,cex.pts=cex.pts,cex.axis=cex.axis,xlim=xlim,ylim=ylim,by=by)
+    plot_Qq_2d(fitted.Qq,alpha=alpha,conf=conf,cex.pts=cex.pts,cex.axis=cex.axis,xlim=xlim,ylim=ylim,by=by)
   }else if(ncol(fitted.Qq$X)==3){
-    plot_Qq_3d(fitted.Qq,surface3d,alpha=alpha,xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3]))
+    plot_Qq_3d(fitted.Qq,surface3d,alpha=alpha,conf=conf,xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3]))
   }
 }
 
@@ -587,6 +589,7 @@ plot_Qq <- function(fitted.Qq,alpha=0.05,surface3d="mean",cex.pts=0.4,cex.axis=1
 #'
 #' @param fitted.mod Object returned by the function fit_GL.
 #' @param alpha Value in (0,1) for the (1-alpha)-simultaneous predictive interval of G.
+#' @param conf Choose between simultaneous ("sim") and marginal ("marg") predictive intervals.
 #' @param surface3d Surface (3d) to plot between the mean ("mean"), and simultaneous predictive interval bounds ("lower" or "upper").
 #' @param surf.col Color of surface (3d).
 #' @param cex.pts Size of points representing exceedances of Q_q.
@@ -599,11 +602,11 @@ plot_Qq <- function(fitted.Qq,alpha=0.05,surface3d="mean",cex.pts=0.4,cex.axis=1
 #' @export
 #'
 #' @examples
-plot_G <- function(fitted.mod,alpha=0.05,surface3d="mean",surf.col="grey",cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim=c(0,0),by=2){
+plot_G <- function(fitted.mod,alpha=0.05,conf="marg",surface3d="mean",surf.col="grey",cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim=c(0,0),by=2){
   if(ncol(fitted.mod$X)==2){
-    plot_G_2d(fitted.mod,alpha,mean_med=TRUE,cex.txt=1.4,cex.pts=0.6,transf.G = FALSE,cex.axis=1.4,by=2)
+    plot_G_2d(fitted.mod,alpha,conf=conf,mean_med=TRUE,cex.txt=1.4,cex.pts=0.6,transf.G = FALSE,cex.axis=1.4,by=2)
   }else if(ncol(fitted.mod$X)==3){
-    plot_G_3d(fitted.mod,alpha,surface=surface3d,xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3]),surf.col=surf.col)
+    plot_G_3d(fitted.mod,alpha,conf=conf,surface=surface3d,xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3]),surf.col=surf.col)
   }
 }
 
@@ -611,6 +614,7 @@ plot_G <- function(fitted.mod,alpha=0.05,surface3d="mean",surf.col="grey",cex.pt
 #'
 #' @param fitted.mod Object returned by the function fit_GL.
 #' @param alpha Value in (0,1) for the (1-alpha)-simultaneous predictive interval of W.
+#' @param conf Choose between simultaneous ("sim") and marginal ("marg") predictive intervals.
 #' @param f_W.lim Plotting range of the image of the density f_W.
 #' @param main Title of figure.
 #' @param mid.gap Radius of the middle circle of zero density.
@@ -622,9 +626,9 @@ plot_G <- function(fitted.mod,alpha=0.05,surface3d="mean",surf.col="grey",cex.pt
 #' @export
 #'
 #' @examples
-plot_W <- function(fitted.mod,alpha=0.05,f_W.lim=0,main="",mid.gap=0.1, txt.gap=0.02,cex.txt=1.4,exconly=FALSE){
+plot_W <- function(fitted.mod,alpha=0.05,conf="marg",f_W.lim=0,main="",mid.gap=0.1, txt.gap=0.02,cex.txt=1.4,exconly=FALSE){
   if(ncol(fitted.mod$X)==2){
-    plot_W_2d(fitted.mod,alpha,f_W.lim,main="",mid.gap=mid.gap, txt.gap=txt.gap,cex.txt=cex.txt,exconly=exconly)
+    plot_W_2d(fitted.mod,alpha,conf=conf,f_W.lim,main="",mid.gap=mid.gap, txt.gap=txt.gap,cex.txt=cex.txt,exconly=exconly)
   }else if(ncol(fitted.mod$X)==3){
     return("Currently not implemented for 3d.")
   }

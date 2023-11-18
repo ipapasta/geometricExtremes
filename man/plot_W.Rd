@@ -7,6 +7,7 @@
 plot_W(
   fitted.mod,
   alpha = 0.05,
+  conf = "marg",
   f_W.lim = 0,
   main = "",
   mid.gap = 0.1,
@@ -19,6 +20,8 @@ plot_W(
 \item{fitted.mod}{Object returned by the function fit_GL.}
 
 \item{alpha}{Value in (0,1) for the (1-alpha)-simultaneous predictive interval of W.}
+
+\item{conf}{Choose between simultaneous ("sim") and marginal ("marg") predictive intervals.}
 
 \item{f_W.lim}{Plotting range of the image of the density f_W.}
 

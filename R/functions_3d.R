@@ -15,7 +15,7 @@
 fit_Qq_3d <- function(X,options,config,return_fitted_obj=F){
 
   if(config$progress){
-    prog <- paste0("Begin quantile regression")
+    prog <- paste0("Begin quantile regression: ", config$file.nm)
     write.table(prog, file = paste0(config$save.path,"Progression.txt"),append=TRUE)
   }
 
@@ -320,15 +320,16 @@ fit_GL_3d <- function(fitted.Qq,config){
 #' Title
 #'
 #' @param fitted.mod
+#' @param alpha
+#' @param conf
 #' @param t
-#' @param q.prime
 #'
 #' @import excursions
 #' @return
 #' @noRd
 #'
 #' @examples
-return_set_3d <- function(fitted.mod,alpha=0.05,t){
+return_set_3d <- function(fitted.mod,alpha=0.05,conf="marg",t){
   ret_set_list <- list(pars=list(t=t,
                                  marginals = "Laplace"),
                        X=fitted.mod$X)
@@ -348,11 +349,18 @@ return_set_3d <- function(fitted.mod,alpha=0.05,t){
     }
 
     excurs <- simconf.mc(samples = t(post.ret.set),alpha = alpha)
+    if(conf=="sim"){
+      low <- excurs$a
+      up <- excurs$b
+    }else if(conf=="marg"){
+      low <- excurs$a.marg
+      up <- excurs$b.marg
+    }
 
     ret_set_list[[k+2]] <- list(samp  = post.ret.set,
                                 mean  = fitted.mod$mesh$loc*apply(post.ret.set,2,mean),
-                                lower = fitted.mod$mesh$loc*excurs$a,
-                                upper = fitted.mod$mesh$loc*excurs$b)
+                                lower = fitted.mod$mesh$loc*low,
+                                upper = fitted.mod$mesh$loc*up)
   }
   return(ret_set_list)
 }
@@ -365,6 +373,7 @@ return_set_3d <- function(fitted.mod,alpha=0.05,t){
 #' @param zlab
 #' @param alpha
 #' @param surface
+#' @param conf
 #'
 #' @import rgl
 #' @import pracma
@@ -372,7 +381,7 @@ return_set_3d <- function(fitted.mod,alpha=0.05,t){
 #' @noRd
 #'
 #' @examples
-plot_Qq_3d <- function(fitted.Qq,surface="mean",alpha=0.05,xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3])){
+plot_Qq_3d <- function(fitted.Qq,surface="mean",alpha=0.05,conf="marg",xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3])){
 
   X <- fitted.Qq$X
   mesh.globe <- fitted.Qq$mesh
@@ -407,10 +416,18 @@ plot_Qq_3d <- function(fitted.Qq,surface="mean",alpha=0.05,xlab=expression(X[1])
     partial.Qq <- apply(Qqs,1,mean)
   }else if(surface=="lower"){
     excurs <- simconf.mc(samples = Qqs,alpha = alpha)
-    partial.Qq <- excurs$a #apply(all.Gs,2,function(xx) quantile(xx,0.025))
+    if(conf=="sim"){
+      partial.Qq <- excurs$a
+    }else if(conf=="marg"){
+      partial.Qq <- excurs$a.marg
+    }
   }else if(surface=="upper"){
     excurs <- simconf.mc(samples = Qqs,alpha = alpha)
-    partial.Qq <- excurs$b #apply(all.Gs,2,function(xx) quantile(xx,0.975))
+    if(conf=="sim"){
+      partial.Qq <- excurs$b
+    }else if(conf=="marg"){
+      partial.Qq <- excurs$b.marg
+    }
   }
 
   N <- 100
@@ -438,6 +455,7 @@ plot_Qq_3d <- function(fitted.Qq,surface="mean",alpha=0.05,xlab=expression(X[1])
 #' @param zlab
 #' @param alpha
 #' @param surf.col
+#' @param conf
 #'
 #' @import rgl
 #' @import pracma
@@ -445,7 +463,7 @@ plot_Qq_3d <- function(fitted.Qq,surface="mean",alpha=0.05,xlab=expression(X[1])
 #' @noRd
 #'
 #' @examples
-plot_G_3d <- function(fitted.mod,alpha=0.05,surface,xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3]),surf.col="grey"){
+plot_G_3d <- function(fitted.mod,alpha=0.05,conf="marg",surface,xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3]),surf.col="grey"){
 
   X <- fitted.mod$X
   mesh.globe <- fitted.mod$mesh
@@ -487,10 +505,18 @@ plot_G_3d <- function(fitted.mod,alpha=0.05,surface,xlab=expression(X[1]),ylab=e
     partial.G <- apply(all.Gs,2,mean)
   }else if(surface=="lower"){
     excurs <- simconf.mc(samples = t(all.Gs),alpha = alpha)
-    partial.G <- excurs$a #apply(all.Gs,2,function(xx) quantile(xx,0.025))
+    if(conf=="sim"){
+      partial.G <- excurs$a
+    }else if(conf=="marg"){
+      partial.G <- excurs$a.marg
+    }
   }else if(surface=="upper"){
     excurs <- simconf.mc(samples = t(all.Gs),alpha = alpha)
-    partial.G <- excurs$b #apply(all.Gs,2,function(xx) quantile(xx,0.975))
+    if(conf=="sim"){
+      partial.G <- excurs$b
+    }else if(conf=="marg"){
+      partial.G <- excurs$b.marg
+    }
   }
 
   N <- 100

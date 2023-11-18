@@ -7,6 +7,7 @@
 plot_Qq(
   fitted.Qq,
   alpha = 0.05,
+  conf = "marg",
   surface3d = "mean",
   cex.pts = 0.4,
   cex.axis = 1.4,
@@ -19,6 +20,8 @@ plot_Qq(
 \item{fitted.Qq}{Object returned by the function fit_Qq.}
 
 \item{alpha}{Value in (0,1) for the (1-alpha)-simultaneous predictive interval of Q_q.}
+
+\item{conf}{Choose between simultaneous ("sim") and marginal ("marg") predictive intervals.}
 
 \item{surface3d}{Surface to plot between the mean ("mean"), and simultaneous predictive interval bounds ("lower" or "upper").}
 
