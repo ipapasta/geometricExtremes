@@ -2,7 +2,7 @@
 
 > A Bayesian approach to geometric extreme value analysis based on:
 >
-> Papastathopoulos, I., De Monte, L., Campbell, R. and Rue, L. (2023) 'Statistical inference for radially-stable generalized Pareto distributions and return level-sets in geometric extremes', [arXiv](https://arxiv.org/abs/2310.06130) preprint.
+> Papastathopoulos, I., De Monte, L., Campbell, R. and Rue, H. (2023) 'Statistical inference for radially-stable generalized Pareto distributions and return level-sets in geometric extremes', [arXiv](https://arxiv.org/abs/2310.06130) preprint.
 
 <p align="center"><img src="/figures/GaussCop_LapMargins.gif" width="60%" height="60%"/> </p>
 
