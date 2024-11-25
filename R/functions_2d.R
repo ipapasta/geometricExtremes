@@ -1,7 +1,7 @@
 #' Obtain posterior samples from the radial function of quantile set, r_{Q_q}, through Bayesian gamma quantile regression.
 #'
 #' @param X                 matrix (n by d) of observations.
-#' @param options            hyper-parameters for the model fits.
+#' @param options           hyper-parameters for the model fits.
 #' @param config            save configurations.
 #' @param return_fitted_obj boolean to return the fitted Q_q.
 #'
@@ -22,6 +22,7 @@ fit_Qq_2d <- function(X,options,config,return_fitted_obj=F){
   R <- apply(X, 1, function(x) sqrt(sum(x^2)))
   W <- atan2(y=X[,2], x=X[,1])
   dfRW <- data.frame(R=R, W=W)
+
 
   ## Definition of mesh and prior
   if(sum(range(options$mesh.knots.2d)==c(-pi,pi))==2){
@@ -155,7 +156,7 @@ fit_GL_2d <- function(fitted.Qq,config){
   if(options$W.model=="M1"){
     cmp.GW <- ~ 0 + Int.G(1) + Int.W(1) + zeta(W, model = circular.Matern_zeta)
   }else if(options$W.model=="M2" | options$W.model=="M3"){
-    weights.domain     <- ipoints(domain=mesh, samplers=c(-pi,pi))
+    weights.domain     <- fm_int(domain=mesh, samplers=c(-pi,pi)) #ipoints(domain=mesh, samplers=c(-pi,pi))
     locs               <- weights.domain$x
     A.constr           <- inla.spde.make.A(mesh=mesh, loc=locs, weights=weights.domain$weight*499/(2*pi),#weights.domain$weight,
                                            block=rep(1, nrow(weights.domain)))
@@ -492,7 +493,7 @@ sample_QGW_posterior_2d <- function(fitted.mod,N.w,S_B=NA,transf.G=F){
 
   W_B    <- S_B
   for(i in 1:N.Qq){
-    message(paste0("Sample W for threshold ",i,"/",N.Qq))
+    message(paste0("Sample G and W for threshold Qq ",i,"/",N.Qq))
     samp.w <- lapply(fitted.mod$log.L[[i]],function(xx) sample_LGCP_fix(N.w,xx,fitted.mod,mesh,W_B))
 
     if(!inherits(S_B,"logical")){
