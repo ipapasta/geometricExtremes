@@ -212,14 +212,14 @@ toLaplaceMargins <- function(X,q){
     if(!is.na(q[1])){
       Y.up <- X[X[,i]>LapTransf$mu[1,i],i]-LapTransf$mu[1,i]
 
-      gpd.fit <- fpot(Y.up, 0, model ="gpd", std.err = FALSE)
+      gpd.fit <- evd::fpot(Y.up, 0, model ="gpd", std.err = FALSE)
       LapTransf$sigma[1,i] <- gpd.fit$estimate[1]
       LapTransf$xi[1,i]    <- gpd.fit$estimate[2]
 
     }
     if(!is.na(q[2])){
       Y.low <- -(X[X[,i]<LapTransf$mu[2,i],i]-LapTransf$mu[2,i])
-      gpd.fit <- fpot(Y.low, 0, model ="gpd", std.err = FALSE)
+      gpd.fit <- evd::fpot(Y.low, 0, model ="gpd", std.err = FALSE)
       LapTransf$sigma[2,i] <- gpd.fit$estimate[1]
       LapTransf$xi[2,i]    <- gpd.fit$estimate[2]
 
