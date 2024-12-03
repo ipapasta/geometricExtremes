@@ -1537,10 +1537,10 @@ X_to_uniform_on_Ball_2d <- function(fitted.mod){
   dfRW <- data.frame(R=R, W=W)
 
   A.obs <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=dfRW$W)$proj$A
-  if(options$use.mean.Qq==TRUE){
+  if(fitted.mod$options$use.mean.Qq==TRUE){
     N.Qq <- 1
   }else{
-    N.Qq <- options$N.Qq
+    N.Qq <- fitted.mod$options$N.Qq
   }
   if(d==2){
     fW.uniform  <- 1/(2*pi)
