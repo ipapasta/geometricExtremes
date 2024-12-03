@@ -686,9 +686,8 @@ X_to_uniform_on_Ball_3d <- function(fitted.mod){
   }else{
     N.Qq <- fitted.mod$options$N.Qq
   }
-  if(d==2){
-    fW.uniform  <- 1/(4*pi)
-  }
+
+  fW.uniform  <- 1/(4*pi)
 
   for(i in 1:N.Qq){
 
