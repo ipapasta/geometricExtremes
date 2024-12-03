@@ -1550,7 +1550,7 @@ X_to_uniform_on_Ball_2d <- function(fitted.mod){
 
     U_on_Ball[[i]] <- list()
 
-    if(options$use.mean.Qq==TRUE){
+    if(fitted.mod$options$use.mean.Qq==TRUE){
       r_Qq <- fitted.mod$Qq.mean$mean
     }else{
       r_Qq <- fitted.mod$Qq[,i]
