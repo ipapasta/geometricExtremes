@@ -651,3 +651,74 @@ get_rinfsup_3d <- function(w,x,y,z){
     return(sort(r.infsup[r.infsup>0]))
   }
 }
+
+#' Title
+#'
+#' @param fitted.mod
+#'
+#' @return
+#' @export
+#'
+#' @examples
+X_to_uniform_on_Ball_3d <- function(fitted.mod){
+
+  get_integrating_constant_3d <- function(mesh,log.f,n.MC.samp){
+    Us <- t(apply(matrix(rnorm(3*n.MC.samp),ncol=3),1,function(x) x/sqrt(sum(x^2))))
+
+    A <- inla.mesh.projector(mesh=mesh,loc=Us)$proj$A
+    lambda_at_Us <- exp(as.vector(A %*%log.f))
+    int_const <- 4*pi*mean(lambda_at_Us)
+    int_const
+  }
+
+  X <- fitted.mod$X
+
+  U_on_Ball <- list()
+
+  ## Convert from cartesian to polar coordinates
+  d <- dim(X)[2]
+  R <- apply(X, 1, function(x) sqrt(sum(x^2)))
+  W <- X/R
+
+  A.obs <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=W)$proj$A
+  if(options$use.mean.Qq==TRUE){
+    N.Qq <- 1
+  }else{
+    N.Qq <- options$N.Qq
+  }
+  if(d==2){
+    fW.uniform  <- 1/(4*pi)
+  }
+
+  for(i in 1:N.Qq){
+
+    U_on_Ball[[i]] <- list()
+
+    if(options$use.mean.Qq==TRUE){
+      r_Qq <- fitted.mod$Qq.mean$mean
+    }else{
+      r_Qq <- fitted.mod$Qq[,i]
+    }
+    r_Qq_at_w_obs  <- as.vector(A.obs %*%r_Qq)
+
+    for(j in 1:length(fitted.mod$log.L[[1]])){
+      message("Q_q: ",toString(i),"/",N.Qq," and G,W: ", toString(j),"/",length(fitted.mod$log.L[[1]]))
+      C <- get_integrating_constant_3d(fitted.mod$mesh,fitted.mod$log.L[[i]][[j]],100000)
+      f_W_at_wobs <- exp(as.vector(A.obs %*%fitted.mod$log.L[[i]][[j]]))/C
+
+      r_G_at_wobs <- as.vector(A.obs %*% fitted.mod$G[[i]][[j]])
+
+      location    <- r_Qq_at_w_obs + log(f_W_at_wobs/fW.uniform) * r_G_at_wobs
+      Rtilde  <-  ((R-location)/r_G_at_wobs)
+      ind.pos <- which(Rtilde > 0)
+
+      Rtilde.pos.unif <- pexp(Rtilde[ind.pos])
+      XX <- cbind(Rtilde.pos.unif^(1/d)*W[ind.pos,1],
+                  Rtilde.pos.unif^(1/d)*W[ind.pos,2],
+                  Rtilde.pos.unif^(1/d)*W[ind.pos,3])
+
+      U_on_Ball[[i]][[j]] <- XX
+    }
+  }
+  return(U_on_Ball)
+}

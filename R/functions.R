@@ -42,7 +42,8 @@
 #'                        mesh.knots.2d    = seq(-pi,pi,by=pi/400),
 #'                        mesh.res.3d      = 20,
 #'                        seed             = 0L)
-set.options <- function(X,excess.dist.fam,W.model,W.data,use.mean.Qq,q,alpha,N.Qq,N.GW,
+set.options <- function(X,excess.dist.fam,W.model,W.data,
+                        use.mean.Qq,q,alpha,N.Qq,N.GW,beta,
                         QR.prior.range = c(1, 0.999),QR.prior.sigma   = c(1, 0.8),
                         zeta.prior.range = c(0.5, 0.999),zeta.prior.sigma = c(5, 0.8),
                         phi.prior.range  = c(0.5, 0.999),phi.prior.sigma  = c(5, 0.8),
@@ -89,6 +90,9 @@ set.options <- function(X,excess.dist.fam,W.model,W.data,use.mean.Qq,q,alpha,N.Q
   if(missing(N.GW)){
     stop("Specify value of N.Qq.")
   }
+  # if(missing(beta)){
+  #   beta <- 1
+  # }
   if(missing(QR.prior.range)){
     stop("Specify value of QR.prior.range.")
   }
@@ -135,7 +139,7 @@ set.options <- function(X,excess.dist.fam,W.model,W.data,use.mean.Qq,q,alpha,N.Q
               q                = q,
               alpha            = alpha,
               N.Qq             = N.Qq,
-              N.GW             = N.GW,
+              N.GW             = N.GW, # beta             = beta,
               QR.prior.range   = QR.prior.range,
               QR.prior.sigma   = QR.prior.sigma,
               zeta.prior.range = zeta.prior.range,
@@ -356,6 +360,27 @@ toOriginalMargins <- function(X.L,LapTransf){
     }
   }
   X.orig
+}
+
+#' Obtain un-normalised log-posterior of beta (1/(1-beta)-power transformation of the radius R)
+#'
+#' @param X           matrix (n by d) of observations.
+#' @param q           quantile of the quantile set Q_q to fit.
+#' @param beta.seq    sequence of beta values between 0 and 1.
+#' @param config      save configurations.
+
+#'
+#' @return
+#' @export
+#'
+#' @examples
+select_beta <- function(X,q,beta.seq,config){
+  if(ncol(X)==2){
+    post_beta <- select_beta_2d(X,options,config,return_fitted_obj=return_fitted_obj)
+  }else{
+    return("Not yet implemented for d>2.")
+  }
+  post_beta
 }
 
 #' Obtain realisations from the posterior distribution of the quantile set Q_q
@@ -670,4 +695,137 @@ plot_X_t <- function(fitted.mod,list_ret_sets,plt = "boundary",surface3d="mean",
       stop("Not available for 3d.")
     }
   }
+}
+
+#' Obtain the volume of a hypersphere
+#'
+#' @param r radius of the sphere.
+#' @param d dimension of the hypersphere S^{d-1}.
+#'
+#' @return volume of the hypersphere.
+#' @export
+#'
+#' @examples
+hypersphere_volume <- function(r, d){
+  (pi^(d/2)/gamma((d/2)+1))*r^d
+}
+
+#' Compute the empirical K function inside the unit ball
+#'
+#' @param X matrix of observations in the unit hypersphere.
+#' @param s sequence of radii for the empirical K function to be estimated.
+#'
+#' @return K function value for different radii values.
+#' @export
+#'
+#' @examples
+Khat <- function(X, s=seq(0, 2, len=50)){
+  require(mvtnorm)
+  ## Monte carlo sample
+  ## Computation of K function
+  d <- ncol(X)
+  J   <- length(s)
+  N   <- nrow(X)
+  dist.mat <- as.matrix(dist(X))
+  count <- matrix(nrow=N, ncol=J)
+  for(j in 1:J)
+    for(i in 1:N){
+      count[i,j] <- sum(dist.mat[i,-i] < s[j])
+    }
+  lambda <- N/hypersphere_volume(1, d)
+  K <- apply(count,2, mean)/lambda
+  return(K)
+}
+
+#' Compute the (1-sig)% simultaneous envelope for the K function
+#'
+#' @param n number of samples inside the unit hypersphere.
+#' @param d dimension of the hypersphere S^{d-1}.
+#' @param M number of montecarlo samples from a uniform sample on S^{d-1}.
+#' @param sig credibility level for the envelope.
+#' @param s sequence of radii for the empirical K function to be estimated.
+#'
+#' @return (1-sig)% simultaneous envelope for the K function.
+#' @export
+#'
+#' @examples
+K.envelope <- function(n, d, M = 500, sig=.95, s=seq(0, 2, len=50)){
+  K.mc <- matrix(nrow=M, ncol=length(s))
+  for(i in 1:M){
+    message("Envelope:", toString(i))
+    U     <- rmvnorm(n=n, rep(0, d), sigma = diag(1, d))
+    R.tmp <- apply(U, 1, function(x) sqrt(sum(x^2)))
+    W   <- t(sapply(1:nrow(U), function(i) U[i,]/R.tmp[i]))
+    R   <- runif(n, 0, 1)^(1/d)
+    ## Monte carlo sample
+    X   <- R*W
+    K.mc[i,] <- Khat(X, s=s)
+  }
+  f <- function(alpha, sig=sig){
+    low   <- apply(K.mc, 2, quantile, alpha/2)
+    upp   <- apply(K.mc, 2, quantile, 1-(alpha/2))
+    count <- apply(K.mc, 1, function(x) as.numeric(all(x >= low & x <= upp)))
+    prop  <- sum(count)/nrow(K.mc)
+    abs(prop-sig)
+  }
+  opt <- optimize(f, interval=c(0,0.49), sig=sig)
+  alpha_star <- opt$minimum
+  low   <- apply(K.mc, 2, quantile, alpha_star/2)
+  upp   <- apply(K.mc, 2, quantile, 1-(alpha_star/2))
+  o     <- list()
+  o$envelope <- rbind(low, upp)
+  o$samples  <- K.mc
+  return(o)
+}
+
+
+#' Transform the observations X to a uniform inside the unit hypersphere
+#'
+#' @param fitted.mod Object returned from the function fit_GL.
+#'
+#' @return list of samples from the transformed point process.
+#' @export
+#'
+#' @examples
+X_to_uniform_on_Ball <- function(fitted.mod){
+  d <- ncol(fitted.mod$X)
+
+  if(d==2){
+    U_on_Ball <- X_to_uniform_on_Ball_2d(fitted.mod)
+  }else if(d==3){
+    U_on_Ball <- X_to_uniform_on_Ball_3d(fitted.mod)
+  }else{
+    stop(paste0("Not implemented for d = ",d))
+  }
+
+  return(U_on_Ball)
+}
+
+#' Thin the transformed point process to have same number of observations
+#'
+#' @param U_on_Ball Object returned by the X_to_uniform_on_Ball function.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+thin_U_on_ball <- function(U_on_Ball){
+
+  n.min <- nrow(U_on_ball[[1]][[1]])
+  for(i in 1:length(U_on_ball)){
+    for(j in 1:length(U_on_ball[[1]])){
+      n.ij <- nrow(U_on_ball[[i]][[j]])
+      if(n.ij < n.min){
+        n.min <- n.ij
+      }
+    }
+  }
+
+  for(i in 1:length(U_on_Ball)){
+    for(j in 1:length(U_on_Ball[[1]])){
+      ind <- sample(1:nrow(U_on_Ball[[i]][[j]]),n.min,replace=F)
+      U_on_Ball[[i]][[j]] <- U_on_Ball[[i]][[j]][ind,]
+    }
+  }
+  return(U_on_Ball)
 }

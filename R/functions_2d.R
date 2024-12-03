@@ -1507,3 +1507,76 @@ pp_W_2d <- function(fitted.mod,n.samp,thresh.num=NA){
   }
   F.W(dfRW.exc$W)
 }
+
+#' Title
+#'
+#' @param fitted.mod
+#'
+#' @return
+#' @export
+#'
+#' @examples
+X_to_uniform_on_Ball_2d <- function(fitted.mod){
+
+  get_integrating_constant_2d <- function(mesh,log.f,n.MC.samp){
+    Us <- runif(n.MC.samp,-pi,pi)
+    A <- inla.mesh.projector(mesh=mesh,loc=Us)$proj$A
+    lambda_at_Us <- exp(as.vector(A %*%log.f))
+    int_const <- 2*pi*mean(lambda_at_Us)
+    int_const
+  }
+
+  X <- fitted.mod$X
+
+  U_on_Ball <- list()
+
+  ## Convert from cartesian to polar coordinates
+  d <- dim(X)[2]
+  R <- apply(X, 1, function(x) sqrt(sum(x^2)))
+  W <- atan2(y=X[,2], x=X[,1])
+  dfRW <- data.frame(R=R, W=W)
+
+  A.obs <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=dfRW$W)$proj$A
+  if(options$use.mean.Qq==TRUE){
+    N.Qq <- 1
+  }else{
+    N.Qq <- options$N.Qq
+  }
+  if(d==2){
+    fW.uniform  <- 1/(2*pi)
+  }
+
+  for(i in 1:N.Qq){
+
+    U_on_Ball[[i]] <- list()
+
+    if(options$use.mean.Qq==TRUE){
+      r_Qq <- fitted.mod$Qq.mean$mean
+    }else{
+      r_Qq <- fitted.mod$Qq[,i]
+    }
+    r_Qq_at_w_obs  <- as.vector(A.obs %*%r_Qq)
+    # ind.exc <- dfRW$R > r_Qq_at_w_obs
+    # dfRWexc <- dfRW[ind.exc,]
+    # A.exc <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=dfRWexc$W)$proj$A
+
+    for(j in 1:length(fitted.mod$log.L[[1]])){
+      message("Q_q: ",toString(i),"/",N.Qq," and G,W: ", toString(j),"/",length(fitted.mod$log.L[[1]]))
+      C <- get_integrating_constant_2d(fitted.mod$mesh,fitted.mod$log.L[[i]][[j]],1000000)
+      f_W_at_wobs <- exp(as.vector(A.obs %*%fitted.mod$log.L[[i]][[j]]))/C
+
+      r_G_at_wobs <- as.vector(A.obs %*% fitted.mod$G[[i]][[j]])
+
+      location    <- r_Qq_at_w_obs + log(f_W_at_wobs/fW.uniform) * r_G_at_wobs
+      Rtilde  <-  ((dfRW$R-location)/r_G_at_wobs)
+      ind.pos <- which(Rtilde > 0)
+
+      Rtilde.pos.unif <- pexp(Rtilde[ind.pos])
+      XX <- cbind(Rtilde.pos.unif^(1/d)*cos(dfRW$W[ind.pos]),
+                  Rtilde.pos.unif^(1/d)*sin(dfRW$W[ind.pos]))
+
+      U_on_Ball[[i]][[j]] <- XX
+    }
+  }
+  return(U_on_Ball)
+}

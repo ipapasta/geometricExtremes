@@ -14,6 +14,7 @@ set.options(
   alpha,
   N.Qq,
   N.GW,
+  beta,
   QR.prior.range = c(1, 0.999),
   QR.prior.sigma = c(1, 0.8),
   zeta.prior.range = c(0.5, 0.999),
