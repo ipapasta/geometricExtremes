@@ -214,8 +214,7 @@ fit_GL_3d <- function(fitted.Qq,config){
 
     lik_W  <- like("cp", formula = form.W,
                    data = df.data.W,
-                   domain = list(coordinates=mesh.globe),
-                   ips = ipoints(mesh.globe))
+                   domain = list(coordinates=mesh.globe))#,ips = fm_int(domain=mesh.globe))
 
     fit_GW <- bru(cmp, lik_W, lik_G,
                   options = list(bru_max_iter = 1,
