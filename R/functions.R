@@ -715,6 +715,7 @@ hypersphere_volume <- function(r, d){
 #' @param X matrix of observations in the unit hypersphere.
 #' @param s sequence of radii for the empirical K function to be estimated.
 #'
+#' @import mvtnorm
 #' @return K function value for different radii values.
 #' @export
 #'
@@ -745,11 +746,13 @@ Khat <- function(X, s=seq(0, 2, len=50)){
 #' @param sig credibility level for the envelope.
 #' @param s sequence of radii for the empirical K function to be estimated.
 #'
+#' @import mvtnorm
 #' @return (1-sig)% simultaneous envelope for the K function.
 #' @export
 #'
 #' @examples
 K.envelope <- function(n, d, M = 500, sig=.95, s=seq(0, 2, len=50)){
+  require(mvtnorm)
   K.mc <- matrix(nrow=M, ncol=length(s))
   for(i in 1:M){
     message("Envelope:", toString(i))
