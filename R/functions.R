@@ -710,7 +710,7 @@ hypersphere_volume <- function(r, d){
   (pi^(d/2)/gamma((d/2)+1))*r^d
 }
 
-#' Compute the empirical K function inside the unit ball
+#' Compute the empirical K function inside the unit ball via ball subsets
 #'
 #' @param X matrix of observations in the unit hypersphere.
 #' @param s sequence of radii for the empirical K function to be estimated.
@@ -720,7 +720,7 @@ hypersphere_volume <- function(r, d){
 #' @export
 #'
 #' @examples
-Khat <- function(X, s=seq(0, 2, len=50)){
+Khat_B <- function(X, s=seq(0, 2, len=30)){
   require(mvtnorm)
   ## Monte carlo sample
   ## Computation of K function
@@ -735,6 +735,42 @@ Khat <- function(X, s=seq(0, 2, len=50)){
     }
   lambda <- N/hypersphere_volume(1, d)
   K <- apply(count,2, mean)/lambda
+  # count <- matrix(nrow=N, ncol=(J-2))
+  # for(j in 2:(J-1))
+  #   for(i in 1:N){
+  #     count[i,j-1] <- sum(dist.mat[i,-i] < s[j])
+  #   }
+  # lambda <- N/hypersphere_volume(1, d)
+  # K <- c(0, apply(count,2, mean)/lambda, (N-1)/lambda)
+  return(K)
+}
+
+#' Compute the empirical K function inside the unit ball via spherical cone subsets
+#'
+#' @param X matrix of observations in the unit hypersphere.
+#' @param phi sequence of angles of the spherical cone for the empirical K function to be estimated.
+#'
+#' @import mvtnorm
+#' @return K function value for different radii values.
+#' @export
+#'
+#' @examples
+Khat_W <- function(W, phi=seq(0, pi, len=30)){
+  require(mvtnorm)
+  ## Monte carlo sample
+  ## Computation of K function
+  s <- sqrt(2 - 2*cos(phi))
+  d <- ncol(W)
+  J   <- length(s)
+  N   <- nrow(W)
+  dist.mat <- as.matrix(dist(W))
+  count <- matrix(nrow=N, ncol=J)
+  for(j in 1:J)
+    for(i in 1:N){
+      count[i,j] <- sum(dist.mat[i,-i] < s[j])
+    }
+  lambda <- N/hypersphere_volume(1, d)
+  K <- apply(count,2, mean)/lambda
   return(K)
 }
 
@@ -742,6 +778,7 @@ Khat <- function(X, s=seq(0, 2, len=50)){
 #'
 #' @param n number of samples inside the unit hypersphere.
 #' @param d dimension of the hypersphere S^{d-1}.
+#' @param subset geometry of the subset on which to count sets, "ball" or "sph cone".
 #' @param M number of montecarlo samples from a uniform sample on S^{d-1}.
 #' @param sig credibility level for the envelope.
 #' @param s sequence of radii for the empirical K function to be estimated.
@@ -751,18 +788,24 @@ Khat <- function(X, s=seq(0, 2, len=50)){
 #' @export
 #'
 #' @examples
-K.envelope <- function(n, d, M = 500, sig=.95, s=seq(0, 2, len=50)){
+K.envelope <- function(n, d, subset, M = 500, sig=.95,s=seq(0, 2, len=30),phi=seq(0, pi, len=30)){
   require(mvtnorm)
   K.mc <- matrix(nrow=M, ncol=length(s))
   for(i in 1:M){
     message("Envelope:", toString(i))
     U     <- rmvnorm(n=n, rep(0, d), sigma = diag(1, d))
-    R.tmp <- apply(U, 1, function(x) sqrt(sum(x^2)))
-    W   <- t(sapply(1:nrow(U), function(i) U[i,]/R.tmp[i]))
-    R   <- runif(n, 0, 1)^(1/d)
-    ## Monte carlo sample
-    X   <- R*W
-    K.mc[i,] <- Khat(X, s=s)
+    if(subset=="ball"){
+      R.tmp <- apply(U, 1, function(x) sqrt(sum(x^2)))
+      W   <- t(sapply(1:nrow(U), function(i) U[i,]/R.tmp[i]))
+      R   <- runif(n, 0, 1)^(1/d)
+      ## Monte carlo sample
+      X   <- R*W
+      K.mc[i,] <- Khat_B(X, s=s)
+    }else{
+      W   <- t(sapply(1:nrow(U), function(i) U[i,]/sqrt(sum(U[i,]^2))))
+
+      K.mc[i,] <- Khat_W(W, phi=phi)
+    }
   }
   f <- function(alpha, sig=sig){
     low   <- apply(K.mc, 2, quantile, alpha/2)

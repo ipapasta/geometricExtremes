@@ -4,12 +4,22 @@
 \alias{K.envelope}
 \title{Compute the (1-sig)\% simultaneous envelope for the K function}
 \usage{
-K.envelope(n, d, M = 500, sig = 0.95, s = seq(0, 2, len = 50))
+K.envelope(
+  n,
+  d,
+  subset,
+  M = 500,
+  sig = 0.95,
+  s = seq(0, 2, len = 30),
+  phi = seq(0, pi, len = 30)
+)
 }
 \arguments{
 \item{n}{number of samples inside the unit hypersphere.}
 
 \item{d}{dimension of the hypersphere S^{d-1}.}
+
+\item{subset}{geometry of the subset on which to count sets, "ball" or "sph cone".}
 
 \item{M}{number of montecarlo samples from a uniform sample on S^{d-1}.}
 
