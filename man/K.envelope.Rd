@@ -25,7 +25,9 @@ K.envelope(
 
 \item{sig}{credibility level for the envelope.}
 
-\item{s}{sequence of radii for the empirical K function to be estimated.}
+\item{s}{sequence of radii for the empirical K function to be estimated (if subset=="ball").}
+
+\item{phi}{sequence of angles for the empirical K function to be estimated (if subset=="sph cone").}
 }
 \value{
 (1-sig)\% simultaneous envelope for the K function.

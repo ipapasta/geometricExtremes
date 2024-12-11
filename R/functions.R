@@ -781,7 +781,8 @@ Khat_W <- function(W, phi=seq(0, pi, len=30)){
 #' @param subset geometry of the subset on which to count sets, "ball" or "sph cone".
 #' @param M number of montecarlo samples from a uniform sample on S^{d-1}.
 #' @param sig credibility level for the envelope.
-#' @param s sequence of radii for the empirical K function to be estimated.
+#' @param s sequence of radii for the empirical K function to be estimated (if subset=="ball").
+#' @param phi sequence of angles for the empirical K function to be estimated (if subset=="sph cone").
 #'
 #' @import mvtnorm
 #' @return (1-sig)% simultaneous envelope for the K function.
@@ -790,11 +791,12 @@ Khat_W <- function(W, phi=seq(0, pi, len=30)){
 #' @examples
 K.envelope <- function(n, d, subset, M = 500, sig=.95,s=seq(0, 2, len=30),phi=seq(0, pi, len=30)){
   require(mvtnorm)
-  K.mc <- matrix(nrow=M, ncol=length(s))
+
   for(i in 1:M){
     message("Envelope:", toString(i))
     U     <- rmvnorm(n=n, rep(0, d), sigma = diag(1, d))
     if(subset=="ball"){
+      K.mc <- matrix(nrow=M, ncol=length(s))
       R.tmp <- apply(U, 1, function(x) sqrt(sum(x^2)))
       W   <- t(sapply(1:nrow(U), function(i) U[i,]/R.tmp[i]))
       R   <- runif(n, 0, 1)^(1/d)
@@ -802,6 +804,7 @@ K.envelope <- function(n, d, subset, M = 500, sig=.95,s=seq(0, 2, len=30),phi=se
       X   <- R*W
       K.mc[i,] <- Khat_B(X, s=s)
     }else{
+      K.mc <- matrix(nrow=M, ncol=length(phi))
       W   <- t(sapply(1:nrow(U), function(i) U[i,]/sqrt(sum(U[i,]^2))))
 
       K.mc[i,] <- Khat_W(W, phi=phi)
