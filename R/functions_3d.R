@@ -613,6 +613,7 @@ plot_G_3d <- function(fitted.mod,alpha=0.05,conf="marg",surface,xlab=expression(
 #' @param xlab
 #' @param ylab
 #' @param zlab
+#' @param col
 #'
 #' @import rgl
 #' @import pracma
@@ -621,7 +622,7 @@ plot_G_3d <- function(fitted.mod,alpha=0.05,conf="marg",surface,xlab=expression(
 #' @noRd
 #'
 #' @examples
-plot_return_bdry_3d <- function(fitted.mod,list_ret_sets,surface="mean",cex.pts=0.4,cex.axis=1.4,xyzlim=c(0,0),xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3])){
+plot_return_bdry_3d <- function(fitted.mod,list_ret_sets,surface="mean",cex.pts=0.4,cex.axis=1.4,xyzlim=c(0,0),xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3]),col="grey"){
 
   t <- rev(sort(list_ret_sets$pars$t))
 
@@ -658,7 +659,7 @@ plot_return_bdry_3d <- function(fitted.mod,list_ret_sets,surface="mean",cex.pts=
 
     surface3d(x=locs.cartesian[,1]*partial.G.m,
               y=locs.cartesian[,2]*partial.G.m,
-              z=locs.cartesian[,3]*partial.G.m, alpha=.3, col="gray")
+              z=locs.cartesian[,3]*partial.G.m, alpha=.3, col=col)
 
     R <- apply(fitted.mod$X,1,function(xx) sqrt(sum(xx^2)))
     W <- fitted.mod$X/R
