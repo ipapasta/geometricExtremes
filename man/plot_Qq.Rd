@@ -7,7 +7,7 @@
 plot_Qq(
   fitted.Qq,
   alpha = 0.05,
-  conf = "marg",
+  conf = "sim",
   surface3d = "mean",
   cex.pts = 0.4,
   cex.axis = 1.4,

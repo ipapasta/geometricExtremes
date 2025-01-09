@@ -485,6 +485,7 @@ prob_estimation <- function(fitted.mod,post.sample,x_B,y_B){
 #' Obtain realisations from the radial function of the return level-set X_t.
 #'
 #' @param fitted.mod Object returned from the function fit_GL.
+#' @param set Type of quantile set, either "classic" or "isotropic".
 #' @param alpha Value in (0,1) for the (1-alpha)-simultaneous predictive interval of X_t.
 #' @param conf Choose between simultaneous ("sim") and marginal ("marg") predictive intervals.
 #' @param t Vector of return periods t.prime <= 1/(1-q) for the return level-sets X_{t.prime}.
@@ -496,7 +497,7 @@ prob_estimation <- function(fitted.mod,post.sample,x_B,y_B){
 #' @export
 #'
 #' @examples
-return_set <- function(fitted.mod,alpha=0.05,conf="marg",t=NA,q.prime=NA,include.Qq=FALSE,LapTransf=NA){
+return_set <- function(fitted.mod,set="classic",alpha=0.05,conf="sim",t=NA,q.prime=NA,include.Qq=FALSE,LapTransf=NA){
   if(fitted.mod$options$excess.dist.fam=="GP"){
     stop("Return sets for GP exceedances not yet implemented.")
   }
@@ -527,11 +528,18 @@ return_set <- function(fitted.mod,alpha=0.05,conf="marg",t=NA,q.prime=NA,include
       }
     }
     return(ret_set)
-  }else if(ncol(fitted.mod$X)>2){
+  }else if(ncol(fitted.mod$X)==3){
     if(length(t)>1){
       stop("Specify only one value of t or q.prime for 3d plots.")
     }
-    ret_set <- return_set_3d(fitted.mod,alpha=alpha,conf=conf,t=t)
+
+    if(set=="classic"){
+      ret_set <- return_set_3d(fitted.mod,alpha=alpha,conf=conf,t=t)
+    }else if(set=="isotropic"){
+      ret_set <- return_set_3d_isotropic(fitted.mod,alpha=alpha,conf=conf,t=t)
+    }else{
+      return("Argument set must be 'classic' or 'isotropic'.")
+    }
     if(!inherits(LapTransf,"logical")){
       # stop("Not available yet.")
       ret_set$pars$marginals <- "Original"
@@ -542,7 +550,7 @@ return_set <- function(fitted.mod,alpha=0.05,conf="marg",t=NA,q.prime=NA,include
     }
     return(ret_set)
   }else{
-    return("X must be an n by p matrix, with p = 2.")
+    return("X must be an n by p matrix, with p = 2 or 3.")
   }
 }
 
@@ -602,7 +610,7 @@ eta_posterior <- function(fitted.mod){
 #' @export
 #'
 #' @examples
-plot_Qq <- function(fitted.Qq,alpha=0.05,conf="marg",surface3d="mean",cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim=c(0,0),by=2){
+plot_Qq <- function(fitted.Qq,alpha=0.05,conf="sim",surface3d="mean",cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim=c(0,0),by=2){
   if(ncol(fitted.Qq$X)==2){
     plot_Qq_2d(fitted.Qq,alpha=alpha,conf=conf,cex.pts=cex.pts,cex.axis=cex.axis,xlim=xlim,ylim=ylim,by=by)
   }else if(ncol(fitted.Qq$X)==3){
@@ -627,7 +635,7 @@ plot_Qq <- function(fitted.Qq,alpha=0.05,conf="marg",surface3d="mean",cex.pts=0.
 #' @export
 #'
 #' @examples
-plot_G <- function(fitted.mod,alpha=0.05,conf="marg",surface3d="mean",surf.col="grey",cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim=c(0,0),by=2){
+plot_G <- function(fitted.mod,alpha=0.05,conf="sim",surface3d="mean",surf.col="grey",cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim=c(0,0),by=2){
   if(ncol(fitted.mod$X)==2){
     plot_G_2d(fitted.mod,alpha,conf=conf,mean_med=TRUE,cex.txt=1.4,cex.pts=0.6,transf.G = FALSE,cex.axis=1.4,by=2)
   }else if(ncol(fitted.mod$X)==3){
@@ -651,7 +659,7 @@ plot_G <- function(fitted.mod,alpha=0.05,conf="marg",surface3d="mean",surf.col="
 #' @export
 #'
 #' @examples
-plot_W <- function(fitted.mod,alpha=0.05,conf="marg",f_W.lim=0,main="",mid.gap=0.1, txt.gap=0.02,cex.txt=1.4,exconly=FALSE){
+plot_W <- function(fitted.mod,alpha=0.05,conf="sim",f_W.lim=0,main="",mid.gap=0.1, txt.gap=0.02,cex.txt=1.4,exconly=FALSE){
   if(ncol(fitted.mod$X)==2){
     plot_W_2d(fitted.mod,alpha,conf=conf,f_W.lim,main="",mid.gap=mid.gap, txt.gap=txt.gap,cex.txt=cex.txt,exconly=exconly)
   }else if(ncol(fitted.mod$X)==3){

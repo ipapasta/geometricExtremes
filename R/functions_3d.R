@@ -328,7 +328,7 @@ fit_GL_3d <- function(fitted.Qq,config){
 #' @noRd
 #'
 #' @examples
-return_set_3d <- function(fitted.mod,alpha=0.05,conf="marg",t){
+return_set_3d <- function(fitted.mod,alpha=0.05,conf="sim",t){
   ret_set_list <- list(pars=list(t=t,
                                  marginals = "Laplace"),
                        X=fitted.mod$X)
@@ -341,8 +341,75 @@ return_set_3d <- function(fitted.mod,alpha=0.05,conf="marg",t){
     cnt <- 1
     for(i in 1:fitted.mod$options$N.Qq){
       for(j in 1:fitted.mod$options$N.GW){
+        message("Q_q: ",toString(i),"/",fitted.mod$options$N.Qq," and G,W: ", toString(j),"/",fitted.mod$options$N.GW)
         ret.set <- fitted.mod$Qq[,i] + K*fitted.mod$G[[i]][[j]]
         post.ret.set[cnt,] <- ret.set
+        cnt <- cnt+1
+      }
+    }
+
+    excurs <- simconf.mc(samples = t(post.ret.set),alpha = alpha)
+    if(conf=="sim"){
+      low <- excurs$a
+      up <- excurs$b
+    }else if(conf=="marg"){
+      low <- excurs$a.marg
+      up <- excurs$b.marg
+    }
+
+    ret_set_list[[k+2]] <- list(samp  = post.ret.set,
+                                mean  = fitted.mod$mesh$loc*apply(post.ret.set,2,mean),
+                                lower = fitted.mod$mesh$loc*low,
+                                upper = fitted.mod$mesh$loc*up)
+  }
+  return(ret_set_list)
+}
+
+
+#' Title
+#'
+#' @param fitted.mod
+#' @param alpha
+#' @param conf
+#' @param t
+#'
+#' @return
+#' @export
+#'
+#' @examples
+return_set_3d_isotropic <- function(fitted.mod,alpha=0.05,conf="sim",t){
+  ret_set_list <- list(pars=list(t=t,
+                                 marginals = "Laplace"),
+                       X=fitted.mod$X)
+
+  get_integrating_constant_3d <- function(mesh,log.f,n.MC.samp){
+    Us <- t(apply(matrix(rnorm(3*n.MC.samp),ncol=3),1,function(x) x/sqrt(sum(x^2))))
+
+    A <- inla.mesh.projector(mesh=mesh,loc=Us)$proj$A
+    lambda_at_Us <- exp(as.vector(A %*%log.f))
+    int_const <- 4*pi*mean(lambda_at_Us)
+    int_const
+  }
+
+  fW.uniform  <- 1/(4*pi)
+  # ret_set_list <- return_set_3d(fitted.mod,alpha,conf,t)
+  #
+  # plot_return_bdry_3d(fitted.mod,ret_set_list,"mean")
+
+  for(k in 1:length(t)){
+    K <- log(t[k]*(1-fitted.mod$options$q))
+    n.mesh <- nrow(fitted.mod$mesh$loc)
+    n.samp <- fitted.mod$options$N.Qq*fitted.mod$options$N.GW
+    post.ret.set <- matrix(NA,nrow=n.samp,ncol=n.mesh)
+    cnt <- 1
+    for(i in 1:fitted.mod$options$N.Qq){
+      for(j in 1:fitted.mod$options$N.GW){
+        message("Q_q: ",toString(i),"/",fitted.mod$options$N.Qq," and G,W: ", toString(j),"/",length(fitted.mod$log.L[[1]]))
+        C <- get_integrating_constant_3d(fitted.mod$mesh,fitted.mod$log.L[[i]][[j]],100000)
+        f_W <- exp(fitted.mod$log.L[[i]][[j]])/C
+        ret.set <- fitted.mod$Qq[,i] + K*fitted.mod$G[[i]][[j]]
+        ret.set.omni <- ret.set + log(f_W/fW.uniform) * fitted.mod$G[[i]][[j]]
+        post.ret.set[cnt,] <- ret.set.omni
         cnt <- cnt+1
       }
     }
@@ -558,10 +625,15 @@ plot_return_bdry_3d <- function(fitted.mod,list_ret_sets,surface="mean",cex.pts=
 
   t <- rev(sort(list_ret_sets$pars$t))
 
+  xlim <- range(fitted.mod$X[,1])
+  ylim <- range(fitted.mod$X[,2])
+  zlim <- range(fitted.mod$X[,3])
   if(sum(xyzlim==c(0,0))==2){
-    plot3d(list_ret_sets$X,xlab=xlab,ylab=ylab,zlab=zlab)
+
+    plot3d(NA,xlab=xlab,ylab=ylab,zlab=zlab,
+           xlim=xlim,ylim=ylim,zlim=zlim)
   }else{
-    plot3d(list_ret_sets$X,xlab=xlab,ylab=ylab,zlab=zlab,
+    plot3d(NA,xlab=xlab,ylab=ylab,zlab=zlab,
            xlim=xyzlim,ylim=xyzlim,zlim=xyzlim)
   }
 
@@ -587,6 +659,18 @@ plot_return_bdry_3d <- function(fitted.mod,list_ret_sets,surface="mean",cex.pts=
     surface3d(x=locs.cartesian[,1]*partial.G.m,
               y=locs.cartesian[,2]*partial.G.m,
               z=locs.cartesian[,3]*partial.G.m, alpha=.3, col="gray")
+
+    R <- apply(fitted.mod$X,1,function(xx) sqrt(sum(xx^2)))
+    W <- fitted.mod$X/R
+    A.obs <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=W)$proj$A
+    r_Qq_at_w_obs  <- as.vector(A.obs %*%partial.G)
+
+    X.exc <- fitted.mod$X[R>r_Qq_at_w_obs,]
+    points3d(X.exc[,1],X.exc[,2],X.exc[,3],col="black")
+    X.nonexc <- fitted.mod$X[!(R>r_Qq_at_w_obs),]
+    points3d(X.nonexc[,1],X.nonexc[,2],X.nonexc[,3],col="grey60")
+
+
   }else{
     if(surface=="mean"){
       lines3d(post.ret.set$mean,col="red")

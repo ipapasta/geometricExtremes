@@ -7,7 +7,7 @@
 plot_W(
   fitted.mod,
   alpha = 0.05,
-  conf = "marg",
+  conf = "sim",
   f_W.lim = 0,
   main = "",
   mid.gap = 0.1,

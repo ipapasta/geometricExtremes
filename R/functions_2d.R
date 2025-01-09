@@ -788,7 +788,7 @@ chi_posterior <- function(fitted.mod,u,conditioning.marg=1,N.w=5000,transf.G=F){
 #' @noRd
 #'
 #' @examples
-return_set_2d <- function(fitted.mod,alpha=0.05,t,conf="marg",include.Qq=FALSE){
+return_set_2d <- function(fitted.mod,alpha=0.05,t,conf="sim",include.Qq=FALSE){
 
   if(include.Qq==TRUE){
     ret_set_list <- list(pars=list(t=c(1/(1-fitted.mod$options$q),t),
@@ -1051,7 +1051,7 @@ eta_posterior_2d <- function(fitted.mod,Transf.G=TRUE){
 #' @noRd
 #'
 #' @examples
-plot_Qq_2d <- function(fitted.Qq,alpha,conf="marg",cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim=c(0,0),by=2){
+plot_Qq_2d <- function(fitted.Qq,alpha,conf="sim",cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim=c(0,0),by=2){
 
   mean.Qq <- apply(fitted.Qq$Qq,1,mean,na.rm=T)
   meann <- pol2cart(cbind(fitted.Qq$mesh$loc,mean.Qq))
@@ -1118,7 +1118,7 @@ plot_Qq_2d <- function(fitted.Qq,alpha,conf="marg",cex.pts=0.4,cex.axis=1.4,xlim
 #' @noRd
 #'
 #' @examples
-plot_G_2d <- function(fitted.mod,alpha,conf="marg",mean_med="mean",cex.txt=1.4,cex.pts=0.6,transf.G = F,cex.axis=1.4,by=2){
+plot_G_2d <- function(fitted.mod,alpha,conf="sim",mean_med="mean",cex.txt=1.4,cex.pts=0.6,transf.G = F,cex.axis=1.4,by=2){
   if(transf.G==T){
     G <- fitted.mod$G_T
   }else{
@@ -1216,7 +1216,7 @@ plot_G_2d <- function(fitted.mod,alpha,conf="marg",mean_med="mean",cex.txt=1.4,c
 #' @noRd
 #'
 #' @examples
-plot_W_2d <- function(fitted.mod,alpha,conf="marg",xylim,main="",mid.gap=0.1, txt.gap=0.02,cex.txt=1.4,exconly=F){
+plot_W_2d <- function(fitted.mod,alpha,conf="sim",xylim,main="",mid.gap=0.1, txt.gap=0.02,cex.txt=1.4,exconly=F){
 
   X <- fitted.mod$X
   R <- apply(X, 1, function(x) sqrt(sum(x^2)))
@@ -1544,6 +1544,7 @@ X_to_uniform_on_Ball_2d <- function(fitted.mod){
   }
 
   fW.uniform  <- 1/(2*pi)
+
 
   for(i in 1:N.Qq){
 

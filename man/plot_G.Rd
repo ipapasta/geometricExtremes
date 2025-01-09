@@ -7,7 +7,7 @@
 plot_G(
   fitted.mod,
   alpha = 0.05,
-  conf = "marg",
+  conf = "sim",
   surface3d = "mean",
   surf.col = "grey",
   cex.pts = 0.4,

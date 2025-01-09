@@ -6,8 +6,9 @@
 \usage{
 return_set(
   fitted.mod,
+  set = "classic",
   alpha = 0.05,
-  conf = "marg",
+  conf = "sim",
   t = NA,
   q.prime = NA,
   include.Qq = FALSE,
@@ -16,6 +17,8 @@ return_set(
 }
 \arguments{
 \item{fitted.mod}{Object returned from the function fit_GL.}
+
+\item{set}{Type of quantile set, either "classic" or "isotropic".}
 
 \item{alpha}{Value in (0,1) for the (1-alpha)-simultaneous predictive interval of X_t.}
 
