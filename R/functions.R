@@ -511,7 +511,7 @@ return_set <- function(fitted.mod,set="classic",alpha=0.05,conf="sim",t=NA,q.pri
     }
     t <- sort(1/(1-q.prime))
   }else{
-    if(min(1-1/t)<=fitted.mod$options$q){
+    if(min(1-1/t)<fitted.mod$options$q){
       stop("t must be less than 1/(1-q).")
     }
   }

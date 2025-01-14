@@ -467,14 +467,14 @@ plot_Qq_3d <- function(fitted.Qq,surface="mean",alpha=0.05,conf="marg",xlab=expr
   data.unit.sphere <- sph2cart(cbind(as.matrix(dfRphitheta[,2:3]),1))
   A.Qq <- inla.mesh.projector(mesh=mesh.globe,loc=data.unit.sphere)$proj$A
 
-  exc.inds <- c()
-  for(i in 1:options$N.Qq){
-    Qq.thetaphi <- as.vector(A.Qq %*% fitted.Qq$Qq[,i])
-    exc.inds  <- c(exc.inds,which(dfRphitheta$R - Qq.thetaphi > 0))
-  }
-  exc.inds <- unique(exc.inds)
-
-  X.exc <- X[exc.inds,]
+  # exc.inds <- c()
+  # for(i in 1:options$N.Qq){
+  #   Qq.thetaphi <- as.vector(A.Qq %*% fitted.Qq$Qq[,i])
+  #   exc.inds  <- c(exc.inds,which(dfRphitheta$R - Qq.thetaphi > 0))
+  # }
+  # exc.inds <- unique(exc.inds)
+  #
+  # X.exc <- X[exc.inds,]
 
   Qqs <- fitted.Qq$Qq
 
@@ -496,6 +496,11 @@ plot_Qq_3d <- function(fitted.Qq,surface="mean",alpha=0.05,conf="marg",xlab=expr
     }
   }
 
+  partial.Qq.at.W <- as.vector(A.Qq %*% partial.Qq)
+  exc.inds <- R > partial.Qq.at.W
+  X.exc <- X[exc.inds,]
+  X.non.exc <- X[!exc.inds,]
+
   N <- 100
   locs.polar     <- as.matrix(data.frame(expand.grid(theta=seq(-pi, pi, len=N), phi = seq(-pi/2, pi/2, len=N)), r=rep(1, 10*10)))
   locs.cartesian <- sph2cart(locs.polar)
@@ -509,6 +514,7 @@ plot_Qq_3d <- function(fitted.Qq,surface="mean",alpha=0.05,conf="marg",xlab=expr
   surface3d(x=locs.cartesian[,1]*Qq.m,
             y=locs.cartesian[,2]*Qq.m,
             z=locs.cartesian[,3]*Qq.m, alpha=.3, col="gray")
+  points3d(X.non.exc,col="grey40")
   axes3d(edges="bbox")
 }
 
@@ -613,7 +619,6 @@ plot_G_3d <- function(fitted.mod,alpha=0.05,conf="marg",surface,xlab=expression(
 #' @param xlab
 #' @param ylab
 #' @param zlab
-#' @param col
 #'
 #' @import rgl
 #' @import pracma
