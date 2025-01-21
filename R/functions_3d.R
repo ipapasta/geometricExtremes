@@ -372,12 +372,13 @@ return_set_3d <- function(fitted.mod,alpha=0.05,conf="sim",t){
 #' @param alpha
 #' @param conf
 #' @param t
+#' @param n.MC.samp Number of integrating directions if set = "isotropic".
 #'
 #' @return
 #' @export
 #'
 #' @examples
-return_set_3d_isotropic <- function(fitted.mod,alpha=0.05,conf="sim",t){
+return_set_3d_isotropic <- function(fitted.mod,alpha=0.05,conf="sim",t,n.MC.samp=10000){
   ret_set_list <- list(pars=list(t=t,
                                  marginals = "Laplace"),
                        X=fitted.mod$X)
@@ -405,7 +406,7 @@ return_set_3d_isotropic <- function(fitted.mod,alpha=0.05,conf="sim",t){
     for(i in 1:fitted.mod$options$N.Qq){
       for(j in 1:fitted.mod$options$N.GW){
         message("Q_q: ",toString(i),"/",fitted.mod$options$N.Qq," and G,W: ", toString(j),"/",length(fitted.mod$log.L[[1]]))
-        C <- get_integrating_constant_3d(fitted.mod$mesh,fitted.mod$log.L[[i]][[j]],100000)
+        C <- get_integrating_constant_3d(fitted.mod$mesh,fitted.mod$log.L[[i]][[j]],n.MC.samp)
         f_W <- exp(fitted.mod$log.L[[i]][[j]])/C
         ret.set <- fitted.mod$Qq[,i] + K*fitted.mod$G[[i]][[j]]
         ret.set.omni <- ret.set + log(f_W/fW.uniform) * fitted.mod$G[[i]][[j]]
@@ -510,7 +511,7 @@ plot_Qq_3d <- function(fitted.Qq,surface="mean",alpha=0.05,conf="marg",xlab=expr
   Qq.m <- matrix(Qq.on.grid, nrow=N, ncol=N)
 
   ## plot estimated unit level set
-  plot3d(X.exc,xlab=xlab,ylab=ylab,zlab=zlab)
+  plot3d(X.exc,xlab=xlab,ylab=ylab,zlab=zlab,cex.axis=4)
   surface3d(x=locs.cartesian[,1]*Qq.m,
             y=locs.cartesian[,2]*Qq.m,
             z=locs.cartesian[,3]*Qq.m, alpha=.3, col="gray")
@@ -672,7 +673,9 @@ plot_return_bdry_3d <- function(fitted.mod,list_ret_sets,surface="mean",cex.pts=
     r_Qq_at_w_obs  <- as.vector(A.obs %*%partial.G)
 
     X.exc <- fitted.mod$X[R>r_Qq_at_w_obs,]
-    points3d(X.exc[,1],X.exc[,2],X.exc[,3],col="black")
+    if(!is.null(dim(X.exc)[1])){
+      points3d(X.exc[,1],X.exc[,2],X.exc[,3],col="black")
+    }
     X.nonexc <- fitted.mod$X[!(R>r_Qq_at_w_obs),]
     points3d(X.nonexc[,1],X.nonexc[,2],X.nonexc[,3],col="grey60")
 

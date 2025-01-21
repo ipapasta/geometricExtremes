@@ -492,12 +492,13 @@ prob_estimation <- function(fitted.mod,post.sample,x_B,y_B){
 #' @param q.prime Vector of probabilities of the canonical return level-set level-sets X_{1/(1-q.prime)}.
 #' @param include.Qq Boolean: Include Q_q in the return sets if TRUE, do not include otherwise.
 #' @param LapTransf Object returned by the function toLaplaceMargins. If provided, return sets will be plotted in original margins.
+#' @param n.MC.samp Number of integrating directions if set = "isotropic".
 #'
 #' @return Matrix of realisations from the radial function of the return level-set X_t.
 #' @export
 #'
 #' @examples
-return_set <- function(fitted.mod,set="classic",alpha=0.05,conf="sim",t=NA,q.prime=NA,include.Qq=FALSE,LapTransf=NA){
+return_set <- function(fitted.mod,set="classic",alpha=0.05,conf="sim",t=NA,q.prime=NA,include.Qq=FALSE,LapTransf=NA,n.MC.samp=10000){
   if(fitted.mod$options$excess.dist.fam=="GP"){
     stop("Return sets for GP exceedances not yet implemented.")
   }
@@ -517,7 +518,13 @@ return_set <- function(fitted.mod,set="classic",alpha=0.05,conf="sim",t=NA,q.pri
   }
 
   if(ncol(fitted.mod$X)==2){
-    ret_set <- return_set_2d(fitted.mod,alpha=alpha,conf=conf,t=t,include.Qq=include.Qq)
+    if(set=="classic"){
+      ret_set <- return_set_2d(fitted.mod,alpha=alpha,conf=conf,t=t,include.Qq=include.Qq)
+    }else if(set=="isotropic"){
+      ret_set <- return_set_2d_isotropic(fitted.mod,alpha=alpha,conf=conf,t=t)
+    }else{
+      return("Argument set must be 'classic' or 'isotropic'.")
+    }
     if(!inherits(LapTransf,"logical")){
       ret_set$pars$marginals <- "Original"
       ret_set$X <- toOriginalMargins(fitted.mod$X,LapTransf)
@@ -604,17 +611,20 @@ eta_posterior <- function(fitted.mod){
 #' @param cex.axis Size of axes' labels.
 #' @param xlim Plotting range on x-axis.
 #' @param ylim Plotting range on y-axis.
+#' @param xlab Label of the x-axis.
+#' @param ylab Label of the y-axis.
+#' @param zlab Label of the z-axis.
 #' @param by Length of intervals between axis ticks and displayed values.
 #'
 #' @return None.
 #' @export
 #'
 #' @examples
-plot_Qq <- function(fitted.Qq,alpha=0.05,conf="sim",surface3d="mean",cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim=c(0,0),by=2){
+plot_Qq <- function(fitted.Qq,alpha=0.05,conf="sim",surface3d="mean",cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim=c(0,0),xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3]),by=2){
   if(ncol(fitted.Qq$X)==2){
     plot_Qq_2d(fitted.Qq,alpha=alpha,conf=conf,cex.pts=cex.pts,cex.axis=cex.axis,xlim=xlim,ylim=ylim,by=by)
   }else if(ncol(fitted.Qq$X)==3){
-    plot_Qq_3d(fitted.Qq,surface3d,alpha=alpha,conf=conf,xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3]))
+    plot_Qq_3d(fitted.Qq,surface3d,alpha=alpha,conf=conf,xlab=xlab,ylab=ylab,zlab=zlab)
   }
 }
 
@@ -629,17 +639,20 @@ plot_Qq <- function(fitted.Qq,alpha=0.05,conf="sim",surface3d="mean",cex.pts=0.4
 #' @param cex.axis Size of axes' labels.
 #' @param xlim Plotting range on x-axis.
 #' @param ylim Plotting range on y-axis.
+#' @param xlab Label of the x-axis.
+#' @param ylab Label of the y-axis.
+#' @param zlab Label of the z-axis.
 #' @param by Length of intervals between axis ticks and displayed values.
 #'
 #' @return None.
 #' @export
 #'
 #' @examples
-plot_G <- function(fitted.mod,alpha=0.05,conf="sim",surface3d="mean",surf.col="grey",cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim=c(0,0),by=2){
+plot_G <- function(fitted.mod,alpha=0.05,conf="sim",surface3d="mean",surf.col="grey",cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim=c(0,0),xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3]),by=2){
   if(ncol(fitted.mod$X)==2){
     plot_G_2d(fitted.mod,alpha,conf=conf,mean_med=TRUE,cex.txt=1.4,cex.pts=0.6,transf.G = FALSE,cex.axis=1.4,by=2)
   }else if(ncol(fitted.mod$X)==3){
-    plot_G_3d(fitted.mod,alpha,conf=conf,surface=surface3d,xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3]),surf.col=surf.col)
+    plot_G_3d(fitted.mod,alpha,conf=conf,surface=surface3d,xlab=xlab,ylab=ylab,zlab=zlab,surf.col=surf.col)
   }
 }
 

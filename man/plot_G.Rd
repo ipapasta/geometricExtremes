@@ -14,6 +14,9 @@ plot_G(
   cex.axis = 1.4,
   xlim = c(0, 0),
   ylim = c(0, 0),
+  xlab = expression(X[1]),
+  ylab = expression(X[2]),
+  zlab = expression(X[3]),
   by = 2
 )
 }
@@ -35,6 +38,12 @@ plot_G(
 \item{xlim}{Plotting range on x-axis.}
 
 \item{ylim}{Plotting range on y-axis.}
+
+\item{xlab}{Label of the x-axis.}
+
+\item{ylab}{Label of the y-axis.}
+
+\item{zlab}{Label of the z-axis.}
 
 \item{by}{Length of intervals between axis ticks and displayed values.}
 }

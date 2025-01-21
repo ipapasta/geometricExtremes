@@ -12,7 +12,8 @@ return_set(
   t = NA,
   q.prime = NA,
   include.Qq = FALSE,
-  LapTransf = NA
+  LapTransf = NA,
+  n.MC.samp = 10000
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ return_set(
 \item{include.Qq}{Boolean: Include Q_q in the return sets if TRUE, do not include otherwise.}
 
 \item{LapTransf}{Object returned by the function toLaplaceMargins. If provided, return sets will be plotted in original margins.}
+
+\item{n.MC.samp}{Number of integrating directions if set = "isotropic".}
 }
 \value{
 Matrix of realisations from the radial function of the return level-set X_t.

@@ -856,6 +856,77 @@ return_set_2d <- function(fitted.mod,alpha=0.05,t,conf="sim",include.Qq=FALSE){
 
 #' Title
 #'
+#' @param fitted.mod
+#' @param alpha
+#' @param conf
+#' @param t
+#' @param n.MC.samp Number of integrating directions if set = "isotropic".
+#'
+#' @return
+#' @export
+#'
+#' @examples
+return_set_2d_isotropic <- function(fitted.mod,alpha=0.05,conf="sim",t,n.MC.samp=10000){
+  ret_set_list <- list(pars=list(t=t,
+                                 marginals = "Laplace"),
+                       X=fitted.mod$X)
+
+  get_integrating_constant_2d <- function(mesh,log.f,n.MC.samp){
+    Us <- runif(n.MC.samp,-pi,pi)
+
+    A <- inla.mesh.projector(mesh=mesh,loc=Us)$proj$A
+    lambda_at_Us <- exp(as.vector(A %*%log.f))
+    int_const <- 4*pi*mean(lambda_at_Us)
+    int_const
+  }
+
+  fW.uniform  <- 1/(2*pi)
+  # ret_set_list <- return_set_3d(fitted.mod,alpha,conf,t)
+  #
+  # plot_return_bdry_3d(fitted.mod,ret_set_list,"mean")
+
+  for(k in 1:length(t)){
+    K <- log(t[k]*(1-fitted.mod$options$q))
+    n.mesh <- length(fitted.mod$mesh$loc)
+    n.samp <- fitted.mod$options$N.Qq*fitted.mod$options$N.GW
+    post.ret.set <- matrix(NA,nrow=n.samp,ncol=n.mesh)
+    cnt <- 1
+    for(i in 1:fitted.mod$options$N.Qq){
+      for(j in 1:fitted.mod$options$N.GW){
+        message("Q_q: ",toString(i),"/",fitted.mod$options$N.Qq," and G,W: ", toString(j),"/",length(fitted.mod$log.L[[1]]))
+        C <- get_integrating_constant_2d(fitted.mod$mesh,fitted.mod$log.L[[i]][[j]],n.MC.samp)
+        f_W <- exp(fitted.mod$log.L[[i]][[j]])/C
+        ret.set <- fitted.mod$Qq[,i] + K*fitted.mod$G[[i]][[j]]
+        ret.set.omni <- ret.set + log(f_W/fW.uniform) * fitted.mod$G[[i]][[j]]
+        post.ret.set[cnt,] <- ret.set.omni
+        cnt <- cnt+1
+        if(length(ret.set.omni[ret.set.omni<0])>0){
+          print(c(i,j))
+        }
+      }
+    }
+
+    excurs <- simconf.mc(samples = t(post.ret.set),alpha = alpha)
+    if(conf=="sim"){
+      low <- excurs$a
+      up <- excurs$b
+    }else if(conf=="marg"){
+      low <- excurs$a.marg
+      up <- excurs$b.marg
+    }
+
+    w <- cbind(cos(fitted.mod$mesh$loc),sin(fitted.mod$mesh$loc))
+    ret_set_list[[k+2]] <- list(samp  = post.ret.set,
+                                mean  = w*apply(post.ret.set,2,mean),
+                                lower = w*low,
+                                upper = w*up)
+  }
+  return(ret_set_list)
+}
+
+
+#' Title
+#'
 #' @param pts
 #' @param w
 #'
