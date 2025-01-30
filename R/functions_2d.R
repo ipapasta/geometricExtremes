@@ -1407,7 +1407,18 @@ plot_return_bdry_2d <- function(fitted.mod,list_ret_sets,cex.pts=0.4,cex.axis=1.
   }
 
   alpha.col <- 0.8
-  cols <- rev(seq(col2rgb("grey20")[1],col2rgb("grey80")[1],length.out=length(t))/255)
+  X <- fitted.mod$X
+  R <- apply(X, 1, function(x) sqrt(sum(x^2)))
+  W <- atan2(y=X[,2], x=X[,1])
+  A.Qq <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=W)$proj$A
+  R.Qq <- apply(list_ret_sets[[3]]$mean,1,function(x) sqrt(sum(x^2)))
+  R.W <- as.vector(A.Qq %*% R.Qq)
+  ind.exc <- R-R.W>0
+  points(X[!ind.exc,],col="grey",pch=16,cex=cex.pts)
+  if(sum(ind.exc)>0){
+    points(X[ind.exc,],col="grey30",pch=16,cex=cex.pts)
+  }
+  cols <- rev(seq(col2rgb("grey60")[1],col2rgb("grey20")[1],length.out=length(t))/255)
   for(i in length(t):1){
     post.ret.set <- list_ret_sets[[i+2]]#return_set_2d(fitted.mod,t=t[i])
     if(!inherits(post.ret.set$lower,"logical")&!inherits(post.ret.set$upper,"logical")){
@@ -1417,13 +1428,12 @@ plot_return_bdry_2d <- function(fitted.mod,list_ret_sets,cex.pts=0.4,cex.axis=1.
       polygon(up,col=rgb(col, col, col, alpha = alpha.col),
               border=rgb(col, col, col, alpha = alpha.col))
       polygon(low,col=rgb(1,1,1),border=rgb(col, col, col, alpha = alpha.col))
+      lines(list_ret_sets[[3]]$mean,col="black")
     }else{
-      meann <- post.ret.set$mean
       col <- cols[length(cols)-i+1]
-      lines(meann,col=rgb(col, col, col, alpha = alpha.col))
+      lines(list_ret_sets[[3]]$mean,col=rgb(col, col, col, alpha = alpha.col))
     }
   }
-  points(list_ret_sets$X,col=rgb(col.pts, col.pts, col.pts, alpha = alpha.pts),pch=16,cex=cex.pts)
 }
 
 #' Title

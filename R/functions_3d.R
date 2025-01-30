@@ -511,11 +511,11 @@ plot_Qq_3d <- function(fitted.Qq,surface="mean",alpha=0.05,conf="marg",xlab=expr
   Qq.m <- matrix(Qq.on.grid, nrow=N, ncol=N)
 
   ## plot estimated unit level set
-  plot3d(X.exc,xlab=xlab,ylab=ylab,zlab=zlab,cex.axis=4)
+  plot3d(X.exc,xlab=xlab,ylab=ylab,zlab=zlab,cex.axis=4,size=5)
   surface3d(x=locs.cartesian[,1]*Qq.m,
             y=locs.cartesian[,2]*Qq.m,
             z=locs.cartesian[,3]*Qq.m, alpha=.3, col="gray")
-  points3d(X.non.exc,col="grey40")
+  points3d(X.non.exc,col="grey40",size=5)
   axes3d(edges="bbox")
 }
 
@@ -602,7 +602,7 @@ plot_G_3d <- function(fitted.mod,alpha=0.05,conf="marg",surface,xlab=expression(
 
   ## plot estimated unit level set
   plot3d(X/log(nrow(X)/2),xlab=xlab,ylab=ylab,zlab=zlab,
-         xlim=c(-1.2,1.2),ylim=c(-1.2,1.2),zlim=c(-1.2,1.2),cex.lab=3)
+         xlim=c(-1.2,1.2),ylim=c(-1.2,1.2),zlim=c(-1.2,1.2),cex.lab=3,size=5)
   surface3d(x=locs.cartesian[,1]*partial.G.m,
             y=locs.cartesian[,2]*partial.G.m,
             z=locs.cartesian[,3]*partial.G.m, alpha=.3, col=surf.col)
@@ -674,10 +674,10 @@ plot_return_bdry_3d <- function(fitted.mod,list_ret_sets,surface="mean",cex.pts=
 
     X.exc <- fitted.mod$X[R>r_Qq_at_w_obs,]
     if(!is.null(dim(X.exc)[1])){
-      points3d(X.exc[,1],X.exc[,2],X.exc[,3],col="black")
+      points3d(X.exc[,1],X.exc[,2],X.exc[,3],col="black",size=5)
     }
     X.nonexc <- fitted.mod$X[!(R>r_Qq_at_w_obs),]
-    points3d(X.nonexc[,1],X.nonexc[,2],X.nonexc[,3],col="grey60")
+    points3d(X.nonexc[,1],X.nonexc[,2],X.nonexc[,3],col="grey60",size=5)
 
 
   }else{
