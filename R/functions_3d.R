@@ -370,9 +370,7 @@ sample_QGW_posterior_3d <- function(fitted.mod,N.w){
     for(j in 1:N.GW){
       A <- inla.mesh.projector(mesh=mesh,loc=samp.w[[j]]$w)$proj$A
       if(fitted.mod$options$excess.dist.fam=="E"){
-        if(transf.G==F){
-          post.samp$g.at.w[[i]][[j]] <- as.vector(A %*% fitted.mod$g[[i]][[j]])
-        }
+        post.samp$g.at.w[[i]][[j]] <- as.vector(A %*% fitted.mod$g[[i]][[j]])
       }else{
         post.samp$G.at.w[[i]][[j]] <- as.vector(A %*% fitted.mod$G[[i]][[j]])
       }
