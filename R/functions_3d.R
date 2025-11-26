@@ -316,6 +316,73 @@ fit_GL_3d <- function(fitted.Qq,config){
   fitted.mod
 }
 
+sample_LGCP_fix_3d <- function(n,log.L,fitted.mod){
+  new.w <- sample.lgcp(fitted.mod$mesh,log.L, ignore.CRS=TRUE)@coords
+  exp.num.samp <- nrow(new.w)
+  mod.exp.num.samp <- log((n-exp.num.samp)/exp.num.samp)
+  while(nrow(new.w)<n){
+    new.w <- rbind(new.w,
+                   sample.lgcp(fitted.mod$mesh,log.L+mod.exp.num.samp, ignore.CRS=TRUE)@coords)
+  }
+  list(w=new.w[1:n,])
+}
+
+#' Title
+#'
+#' @param fitted.mod
+#' @param N.w
+#'
+#' @return
+#' @export
+#'
+#' @examples
+sample_QGW_posterior_3d <- function(fitted.mod,N.w){
+
+  mesh <- fitted.mod$mesh
+  N.Qq <- length(fitted.mod$G)
+  N.GW <- length(fitted.mod$G[[1]])
+
+  if(fitted.mod$options$excess.dist.fam=="E"){
+    post.samp <- list(w     = list(),
+                      P.W_B = list(),
+                      g.at.w   = list(),
+                      Qq.at.w = list())
+  }else{
+    post.samp <- list(w     = list(),
+                      P.W_B = list(),
+                      G.at.w   = list(),
+                      Qq.at.w = list(),
+                      xi = list())
+  }
+
+  for(i in 1:N.Qq){
+    message(paste0("Sample G and W for threshold Qq ",i,"/",N.Qq))
+    samp.w <- lapply(fitted.mod$log.L[[i]],function(xx) sample_LGCP_fix_3d(N.w,xx,fitted.mod))
+    post.samp$w[[i]] <- samp.w
+
+    if(fitted.mod$options$excess.dist.fam=="E"){
+      post.samp$g.at.w[[i]] <- list()
+    }else{
+      post.samp$G.at.w[[i]] <- list()
+    }
+
+    post.samp$Qq.at.w[[i]] <- list()
+    for(j in 1:N.GW){
+      A <- inla.mesh.projector(mesh=mesh,loc=samp.w[[j]]$w)$proj$A
+      if(fitted.mod$options$excess.dist.fam=="E"){
+        if(transf.G==F){
+          post.samp$g.at.w[[i]][[j]] <- as.vector(A %*% fitted.mod$g[[i]][[j]])
+        }
+      }else{
+        post.samp$G.at.w[[i]][[j]] <- as.vector(A %*% fitted.mod$G[[i]][[j]])
+      }
+
+      post.samp$Qq.at.w[[i]][[j]]  <- as.vector(A %*% fitted.mod$Qq[,i])
+    }
+  }
+  post.samp
+}
+
 #' Title
 #'
 #' @param fitted.mod

@@ -442,10 +442,10 @@ fit_GL <- function(fitted.Qq,config){
 sample_QGW_posterior <- function(fitted.mod,N.w,S_B=NA,transf.G=FALSE){
   if(ncol(fitted.mod$X)==2){
     post.samp <- sample_QGW_posterior_2d(fitted.mod,N.w,S_B=S_B,transf.G=transf.G)
-  }else if(ncol(fitted.mod$X)>2){
-    stop("Not yet implemented for d > 2.")
-  }else{
-    return("X must be an n by p matrix, with p = 2.")
+  }else if(ncol(fitted.mod$X)==3){
+    post.samp <- sample_QGW_posterior_3d(fitted.mod,N.w)
+  }else if(ncol(fitted.mod$X)>3){
+    return("X must be an n by d matrix, with d = 2.")
   }
   post.samp
 }
@@ -813,11 +813,12 @@ Khat_W <- function(W, phi=seq(0, pi, len=30)){
 K.envelope <- function(n, d, subset, M = 500, sig=.95,s=seq(0, 2, len=30),phi=seq(0, pi, len=30)){
   require(mvtnorm)
 
+  K.mc <- matrix(nrow=M, ncol=length(s))
   for(i in 1:M){
     message("Envelope:", toString(i))
     U     <- rmvnorm(n=n, rep(0, d), sigma = diag(1, d))
     if(subset=="ball"){
-      K.mc <- matrix(nrow=M, ncol=length(s))
+
       R.tmp <- apply(U, 1, function(x) sqrt(sum(x^2)))
       W   <- t(sapply(1:nrow(U), function(i) U[i,]/R.tmp[i]))
       R   <- runif(n, 0, 1)^(1/d)
