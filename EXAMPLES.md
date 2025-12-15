@@ -154,11 +154,36 @@ Below is a function to obtain posterior samples from the coefficient of residual
 etas <- eta_posterior(fitted.mod)
 mean(etas)
 ```
+
+#### Diagnotics $`K_B`$ and $`K_C`$
+
+Below is a function to assess the quality of fit of the model.
+
+``` r
+# Transform exceedances of Q_q^\star to the unit ball
+U_on_ball <- X_to_uniform_on_Ball(fitted.mod)
+
+# Thin U_on_ball to obtain same number of observation per threshold sample 
+thin_U <- thin_U_on_ball(U_on_ball)
+
+# Create the credible envelopes from a truly uniform sample
+d    <- ncol(fitted.mod$X)
+N    <- nrow(thin_U[[1]][[1]])
+s <- seq(0, 2, len=30)
+K.CI_B <- K_envelope(n=N, d=d, M=1000, subset="ball", s=s)
+phi <- seq(0, pi, len=30)
+K.CI_C <- K_envelope(n=N, d=d, M=1000, subset="ball", phi=phi)
+
+# Estimate the K functions from the ball geometry
+K.hat_B <- K_hat(thin_U,"ball")
+
+# Estimate the K functions from the spherical cone geometry
+K.hat_C <- K_hat(thin_U,"sph cone")
+```
+
 <a id="2d-GP"></a>
 
 ## Generalised Pareto exceedances
-
-Available soon.
 
 ### Simulated data in heavy-tailed margins
 
