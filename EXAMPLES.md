@@ -191,6 +191,7 @@ matplot(s, t(K.CI_B$envelope), type="l", lty=1, col="red", lwd=2, add=TRUE)
 matplot(phi, K.hat_C, type="l", lty=1, col="grey60", lwd=1, xlab="distance (Spherical cone)", ylab = "K",frame.plot=F)
 matplot(phi, t(K.CI_C$envelope), type="l", lty=1, col="red", lwd=2, add=TRUE)
 ```
+<p align="center"><img src="/figures/K_diagnostics.png" width="70%" height="70%"/> </p>
 
 <a id="2d-GP"></a>
 
