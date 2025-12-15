@@ -181,6 +181,17 @@ K.hat_B <- K_hat(thin_U,"ball")
 K.hat_C <- K_hat(thin_U,"sph cone")
 ```
 
+Below are plots of the estimated $`K_B`$ and $`K_C`$ (in light grey) with 
+credible envelope (in red).
+``` r
+par(mfrow=c(1,2),pty="s",mar=c(4.5,4.5,1,4.5))
+matplot(s, K.hat_B, type="l", lty=1, col="grey60", lwd=1, xlab="distance (Ball)", ylab = "K",frame.plot=F)
+matplot(s, t(K.CI_B$envelope), type="l", lty=1, col="red", lwd=2, add=TRUE)
+
+matplot(phi, K.hat_C, type="l", lty=1, col="grey60", lwd=1, xlab="distance (Spherical cone)", ylab = "K",frame.plot=F)
+matplot(phi, t(K.CI_C$envelope), type="l", lty=1, col="red", lwd=2, add=TRUE)
+```
+
 <a id="2d-GP"></a>
 
 ## Generalised Pareto exceedances
