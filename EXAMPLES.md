@@ -155,7 +155,7 @@ etas <- eta_posterior(fitted.mod)
 mean(etas)
 ```
 
-#### Diagnotics $`K_B`$ and $`K_C`$
+### Diagnotics $`K_B`$ and $`K_C`$
 
 Below is a function to assess the quality of fit of the model.
 
