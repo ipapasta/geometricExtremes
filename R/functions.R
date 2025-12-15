@@ -733,7 +733,7 @@ hypersphere_volume <- function(r, d){
 
 #' Compute the empirical K function inside the unit ball via ball subsets
 #'
-#' @param X matrix of observations in the unit hypersphere.
+#' @param X matrix of observations inside the unit ball B_1(0).
 #' @param s sequence of radii for the empirical K function to be estimated.
 #'
 #' @import mvtnorm
@@ -768,11 +768,11 @@ Khat_B <- function(X, s=seq(0, 2, len=30)){
 
 #' Compute the empirical K function inside the unit ball via spherical cone subsets
 #'
-#' @param X matrix of observations in the unit hypersphere.
+#' @param W matrix of observations on S^(d-1).
 #' @param phi sequence of angles of the spherical cone for the empirical K function to be estimated.
 #'
 #' @import mvtnorm
-#' @return K function value for different radii values.
+#' @return K function value for different angular values.
 #' @export
 #'
 #' @examples
@@ -810,7 +810,7 @@ Khat_W <- function(W, phi=seq(0, pi, len=30)){
 #' @export
 #'
 #' @examples
-K.envelope <- function(n, d, subset, M = 500, sig=.95,s=seq(0, 2, len=30),phi=seq(0, pi, len=30)){
+K_envelope <- function(n, d, subset, M = 500, sig=.95,s=seq(0, 2, len=30),phi=seq(0, pi, len=30)){
   require(mvtnorm)
 
   K.mc <- matrix(nrow=M, ncol=length(s))
@@ -847,6 +847,42 @@ K.envelope <- function(n, d, subset, M = 500, sig=.95,s=seq(0, 2, len=30),phi=se
   o$envelope <- rbind(low, upp)
   o$samples  <- K.mc
   return(o)
+}
+
+#' Compute the empirical K function for the fitted model
+#'
+#' @param thinned_U thinned matrix of observations inside the unit ball B_1(0) or on S^(d-1).
+#' @param subset geometry of the subset on which to count sets, "ball" or "sph cone".
+#' @param s sequence of radii for the empirical K function to be estimated (if subset=="ball").
+#' @param phi sequence of angles for the empirical K function to be estimated (if subset=="sph cone").
+#'
+#' @return K function value for the s or phi values.
+#' @export
+#'
+#' @examples
+K_hat <- function(thinned_U,subset,s=seq(0, 2, len=30),phi=seq(0, pi, len=30)){
+  cnt <- 1
+  if(subset=="ball"){
+    Khats.m <- matrix(NA,length(s),length(thinned_U)*length(thinned_U[[1]]))
+    for(i in 1:length(thinned_U)){
+      for(j in 1:length(thinned_U[[1]])){
+        message("Khat for Q_q: ",toString(i),"/",length(thinned_U)," and G,W: ", toString(j),"/",length(thinned_U[[1]]))
+        Khats.m[,cnt] <- Khat_B(thinned_U[[i]][[j]],s=s) # Khats[[i]][[j]]
+        cnt <- cnt + 1
+      }
+    }
+  }else{
+    Khats.m <- matrix(NA,length(phi),length(thinned_U)*length(thinned_U[[1]]))
+    for(i in 1:length(thinned_U)){
+      for(j in 1:length(thinned_U[[1]])){
+        message("Khat for Q_q: ",toString(i),"/",length(thinned_U)," and G,W: ", toString(j),"/",length(thinned_U[[1]]))
+        W.ij <- t(apply(thinned_U[[i]][[j]],1,function(x) x/sqrt(sum(x^2))))
+        Khats.m[,cnt] <- Khat_W(W.ij,phi=phi) # Khats[[i]][[j]]
+        cnt <- cnt + 1
+      }
+    }
+  }
+  return(Khats.m)
 }
 
 

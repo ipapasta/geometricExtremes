@@ -7,12 +7,12 @@
 Khat_W(W, phi = seq(0, pi, len = 30))
 }
 \arguments{
-\item{phi}{sequence of angles of the spherical cone for the empirical K function to be estimated.}
+\item{W}{matrix of observations on S^(d-1).}
 
-\item{X}{matrix of observations in the unit hypersphere.}
+\item{phi}{sequence of angles of the spherical cone for the empirical K function to be estimated.}
 }
 \value{
-K function value for different radii values.
+K function value for different angular values.
 }
 \description{
 Compute the empirical K function inside the unit ball via spherical cone subsets

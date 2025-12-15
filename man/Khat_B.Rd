@@ -7,7 +7,7 @@
 Khat_B(X, s = seq(0, 2, len = 30))
 }
 \arguments{
-\item{X}{matrix of observations in the unit hypersphere.}
+\item{X}{matrix of observations inside the unit ball B_1(0).}
 
 \item{s}{sequence of radii for the empirical K function to be estimated.}
 }
