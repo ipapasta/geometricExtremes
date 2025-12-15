@@ -813,12 +813,16 @@ Khat_W <- function(W, phi=seq(0, pi, len=30)){
 K_envelope <- function(n, d, subset, M = 500, sig=.95,s=seq(0, 2, len=30),phi=seq(0, pi, len=30)){
   require(mvtnorm)
 
-  K.mc <- matrix(nrow=M, ncol=length(s))
+  if(subset=="ball"){
+    K.mc <- matrix(nrow=M, ncol=length(s))
+  }else{
+    K.mc <- matrix(nrow=M, ncol=length(phi))
+  }
+
   for(i in 1:M){
     message("Envelope:", toString(i))
     U     <- rmvnorm(n=n, rep(0, d), sigma = diag(1, d))
     if(subset=="ball"){
-
       R.tmp <- apply(U, 1, function(x) sqrt(sum(x^2)))
       W   <- t(sapply(1:nrow(U), function(i) U[i,]/R.tmp[i]))
       R   <- runif(n, 0, 1)^(1/d)
@@ -826,7 +830,6 @@ K_envelope <- function(n, d, subset, M = 500, sig=.95,s=seq(0, 2, len=30),phi=se
       X   <- R*W
       K.mc[i,] <- Khat_B(X, s=s)
     }else{
-      K.mc <- matrix(nrow=M, ncol=length(phi))
       W   <- t(sapply(1:nrow(U), function(i) U[i,]/sqrt(sum(U[i,]^2))))
 
       K.mc[i,] <- Khat_W(W, phi=phi)
