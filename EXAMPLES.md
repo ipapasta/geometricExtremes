@@ -172,7 +172,7 @@ N    <- nrow(thin_U[[1]][[1]])
 s <- seq(0, 2, len=30)
 K.CI_B <- K_envelope(n=N, d=d, M=1000, subset="ball", s=s)
 phi <- seq(0, pi, len=30)
-K.CI_C <- K_envelope(n=N, d=d, M=1000, subset="ball", phi=phi)
+K.CI_C <- K_envelope(n=N, d=d, M=1000, subset="sph cone", phi=phi)
 
 # Estimate the K functions from the ball geometry
 K.hat_B <- K_hat(thin_U,"ball")
