@@ -465,9 +465,6 @@ sample_QGW_posterior <- function(fitted.mod,N.w,S_B=NA,transf.G=FALSE){
 #'
 #' @examples
 prob_estimation <- function(fitted.mod,post.sample,x_B,y_B){
-  if(x_B[1]<0 & x_B[2] >0 & y_B[1]<0 & y_B[2] >0){
-    stop("The origin 0 cannot be in the set B.")
-  }
   # if(fitted.mod$options$excess.dist.fam=="GP"){
   #   stop("GP exceedances probabilities not yet implemented")
   # }

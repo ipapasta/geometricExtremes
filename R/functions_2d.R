@@ -538,22 +538,29 @@ sample_QGW_posterior_2d <- function(fitted.mod,N.w,S_B=NA,transf.G=F){
 #' @noRd
 #'
 #' @examples
-get_rinfsup <- function(w,x,y){
-  if(x[2]==Inf && y[2]==Inf){
-    r.x <- x[1]/cos(w)
-    r.y <- y[1]/sin(w)
-    return(c(max(r.x,r.y),Inf))
-  }
-  r.x <- x/cos(w)
-  yy <- r.x*sin(w)
-  ind <- which(yy>=y[1] & yy <= y[2])
-  if(length(ind)>0){
-    r.y <- y/sin(w)
-    xx <- r.y*cos(w)
-    r_infsup <- c(r.x[ind],r.y[which(xx>=x[1] & xx <= x[2])])
-    return(sort(r_infsup))
+get_rinfsup <- function(w,x,y,zero_in_B=FALSE){
+  # if the origin 0 \in [x_1,x_2] and 0 \in [y_1,y_2]
+  if(zero_in_B){
+    w <- c(cos(w),sin(w))
+    r_sup <- min(max(x/w),max(y/w))
+    return(c(0,r_sup))
   }else{
-    return(c(0,0))
+    if(x[2]==Inf && y[2]==Inf){
+      r.x <- x[1]/cos(w)
+      r.y <- y[1]/sin(w)
+      return(c(max(r.x,r.y),Inf))
+    }
+    r.x <- x/cos(w)
+    yy <- r.x*sin(w)
+    ind <- which(yy>=y[1] & yy <= y[2])
+    if(length(ind)>0){
+      r.y <- y/sin(w)
+      xx <- r.y*cos(w)
+      r_infsup <- c(r.x[ind],r.y[which(xx>=x[1] & xx <= x[2])])
+      return(sort(r_infsup))
+    }else{
+      return(c(-1,-1))
+    }
   }
 }
 
@@ -583,8 +590,12 @@ prob_estimation_2d <- function(fitted.mod,post.sample,x,y){
   R <- apply(X, 1, function(x) sqrt(sum(x^2)))
   W <- atan2(y=X[,2], x=X[,1])
 
-  r_infsup <- t(sapply(W,get_rinfsup,x=x,y=y))
-  ind.W.B <- apply(r_infsup,1,function(xx){min(xx)>0})
+  if(x[1]<0 & x[2] >0 & y[1]<0 & y[2] >0){
+    zero_in_B <- TRUE
+  }
+
+  r_infsup <- t(sapply(W,get_rinfsup,x=x,y=y,zero_in_B=zero_in_B))
+  ind.W.B <- apply(r_infsup,1,function(xx){min(xx)>=0})
 
   post.pred <- rep(0,N.Qq*N.GW)
   post.pred.correct <- rep(0,N.Qq*N.GW)
@@ -596,7 +607,7 @@ prob_estimation_2d <- function(fitted.mod,post.sample,x,y){
       A <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=W)$proj$A
       Qq  <- as.vector(A %*% fitted.mod$Qq[,i])
 
-      ind.R.Bi <- R> r_infsup[,1] & R < Qq
+      ind.R.Bi <- R> r_infsup[,1] & R < Qq & R< r_infsup[,2]
 
       p.Bi <- sum(ind.R.Bi & ind.W.B)/dim(X)[1]
 
@@ -607,20 +618,20 @@ prob_estimation_2d <- function(fitted.mod,post.sample,x,y){
         Qq.at.w <- post.sample$Qq.at.w[[i]][[j]]
 
         n <- length(w)
-        r <- t(sapply(w,get_rinfsup,x=x,y=y))
+        r <- t(sapply(w,get_rinfsup,x=x,y=y,zero_in_B=zero_in_B))
 
         if(excess.dist.fam=="E"){
           g.at.w   <- post.sample$g.at.w[[i]][[j]]
           pars <- cbind(w,Qq.at.w,r,g.at.w)#; pars <- pars[order(w),];
-          pars <- pars[pars[,3]>0,]
-          p_inf <- pexp(pars[,3]-pars[,2],rate=pars[,5])
-          p_sup <- pexp(pars[,4]-pars[,2],rate=pars[,5])
+          pars <- pars[pars[,3]>=0,]
+          p_inf <- pexp(pmax(pars[,3]-pars[,2],0),rate=pars[,5])
+          p_sup <- pexp(pmax(pars[,4]-pars[,2],0),rate=pars[,5])
         }else{
           G.at.w   <- post.sample$G.at.w[[i]][[j]]
           pars <- cbind(w,Qq.at.w,r,G.at.w)#; pars <- pars[order(w),];
-          pars <- pars[pars[,3]>0,]
-          p_inf <- pgpd(pars[,3]-pars[,2],0,scale=pars[,5],shape=xi[[i]])
-          p_sup <- pgpd(pars[,4]-pars[,2],0,scale=pars[,5],shape=xi[[i]])
+          pars <- pars[pars[,3]>=0,]
+          p_inf <- pgpd(pmax(pars[,3]-pars[,2],0),0,scale=pars[,5],shape=xi[[i]])
+          p_sup <- pgpd(pmax(pars[,4]-pars[,2],0),0,scale=pars[,5],shape=xi[[i]])
         }
         p <- sum(p_sup-p_inf)/n
         post.pred.correct[cnt] <- p*(1-fitted.mod$options$q) + p.Bi
@@ -634,7 +645,7 @@ prob_estimation_2d <- function(fitted.mod,post.sample,x,y){
       A <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=W)$proj$A
       Qq  <- as.vector(A %*% fitted.mod$Qq[,i])
 
-      ind.R.Bi <- R> r_infsup[,1] & R < Qq
+      ind.R.Bi <- R> r_infsup[,1] & R < Qq & R< r_infsup[,2]
 
       p.Bi <- sum(ind.R.Bi & ind.W.B)/dim(X)[1]
 
@@ -645,20 +656,20 @@ prob_estimation_2d <- function(fitted.mod,post.sample,x,y){
         Qq.at.w <- post.sample$Qq.at.w[[i]][[j]]
         P.W_B <- post.sample$P.W_B[[i]][[j]]
 
-        r <- t(sapply(w,get_rinfsup,x=x,y=y))
+        r <- t(sapply(w,get_rinfsup,x=x,y=y,zero_in_B=zero_in_B))
 
         if(excess.dist.fam=="E"){
           g.at.w   <- post.sample$g.at.w[[i]][[j]]
           pars <- cbind(w,Qq.at.w,r,g.at.w)#; pars <- pars[order(w),];
-          pars <- pars[pars[,3]>0,]
-          p_inf <- pexp(pars[,3]-pars[,2],rate=pars[,5])
-          p_sup <- pexp(pars[,4]-pars[,2],rate=pars[,5])
+          pars <- pars[pars[,3]>=0,]
+          p_inf <- pexp(pmax(pars[,3]-pars[,2],0),rate=pars[,5])
+          p_sup <- pexp(pmax(pars[,4]-pars[,2],0),rate=pars[,5])
         }else{
           G.at.w   <- post.sample$G.at.w[[i]][[j]]
           pars <- cbind(w,Qq.at.w,r,G.at.w)#; pars <- pars[order(w),];
-          pars <- pars[pars[,3]>0,]
-          p_inf <- pgpd(pars[,3]-pars[,2],0,scale=pars[,5],shape=xi[[i]])
-          p_sup <- pgpd(pars[,4]-pars[,2],0,scale=pars[,5],shape=xi[[i]])
+          pars <- pars[pars[,3]>=0,]
+          p_inf <- pgpd(pmax(pars[,3]-pars[,2],0),0,scale=pars[,5],shape=xi[[i]])
+          p_sup <- pgpd(pmax(pars[,4]-pars[,2],0),0,scale=pars[,5],shape=xi[[i]])
         }
         p <- mean(p_sup-p_inf)#sum(p_inf-p_sup)/n
         post.pred.correct[cnt] <- p*P.W_B*(1-fitted.mod$options$q) + p.Bi
@@ -708,7 +719,8 @@ chi_posterior <- function(fitted.mod,u,conditioning.marg=1,N.w=5000,transf.G=F){
   for(k in 1:length(u)){
     message(paste0("Chi(u) estimation for u=",u[k],"."))
     x.sq <- c(u[k],Inf); y.sq <- c(u[k],Inf)
-    r_infsup.sq <- t(sapply(W,get_rinfsup,x=x.sq,y=y.sq))
+    zero_in_B <- ifelse(u[k]>0,FALSE,TRUE)
+    r_infsup.sq <- t(sapply(W,get_rinfsup,x=x.sq,y=y.sq,zero_in_B=zero_in_B))
     ind.W.B.sq <- apply(r_infsup.sq,1,function(xx){min(xx)>0})
 
     if(conditioning.marg==1){
@@ -716,7 +728,7 @@ chi_posterior <- function(fitted.mod,u,conditioning.marg=1,N.w=5000,transf.G=F){
     }else if(conditioning.marg==2){
       x.marg <- c(-Inf,Inf); y.marg <- c(u[k],Inf)
     }
-    r_infsup.marg <- t(sapply(W,get_rinfsup,x=x.marg,y=y.marg))
+    r_infsup.marg <- t(sapply(W,get_rinfsup,x=x.marg,y=y.marg,zero_in_B=zero_in_B))
     ind.W.B.marg <- apply(r_infsup.marg,1,function(xx){min(xx)>0})
 
     post.pred <- rep(0,N.Qq*N.GW)
@@ -749,13 +761,13 @@ chi_posterior <- function(fitted.mod,u,conditioning.marg=1,N.w=5000,transf.G=F){
 
         ind.sq <- w>0 & w<pi/2
         w.sq <- w[ind.sq]
-        r.sq <- t(sapply(w.sq,get_rinfsup,x=x.sq,y=y.sq))
+        r.sq <- t(sapply(w.sq,get_rinfsup,x=x.sq,y=y.sq,zero_in_B=zero_in_B))
         pars <- cbind(w.sq,Qq.at.w[ind.sq],r.sq,g.at.w[ind.sq])#; pars <- pars[order(w.sq),];
         pars <- pars[pars[,3]>0,]
         p_inf.sq <- 1-pexp(pars[,3]-pars[,2],rate=pars[,5])
         p.sq <- mean(p_inf.sq)
 
-        r <- t(sapply(w,get_rinfsup,x=x.marg,y=y.marg))
+        r <- t(sapply(w,get_rinfsup,x=x.marg,y=y.marg,zero_in_B=zero_in_B))
         pars <- cbind(w,Qq.at.w,r,g.at.w); pars <- pars[order(w),]; pars <- pars[pars[,3]>0,]
         p_inf <- 1-pexp(pars[,3]-pars[,2],rate=pars[,5])
         p.marg <- mean(p_inf)
