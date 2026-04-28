@@ -557,7 +557,11 @@ get_rinfsup <- function(w,x,y,zero_in_B=FALSE){
       r.y <- y/sin(w)
       xx <- r.y*cos(w)
       r_infsup <- c(r.x[ind],r.y[which(xx>=x[1] & xx <= x[2])])
-      return(sort(r_infsup))
+      if(length(r_infsup)>2){
+        return(sort(unique(r_infsup)))
+      }else{
+        return(sort(r_infsup))
+      }
     }else{
       return(c(-1,-1))
     }
