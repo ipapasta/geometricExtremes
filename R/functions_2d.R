@@ -592,6 +592,8 @@ prob_estimation_2d <- function(fitted.mod,post.sample,x,y){
 
   if(x[1]<0 & x[2] >0 & y[1]<0 & y[2] >0){
     zero_in_B <- TRUE
+  }else{
+    zero_in_B <- FALSE
   }
 
   r_infsup <- t(sapply(W,get_rinfsup,x=x,y=y,zero_in_B=zero_in_B))
