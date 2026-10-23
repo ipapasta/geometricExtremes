@@ -74,7 +74,7 @@ set.options <- function(X,excess.dist.fam,W.model,W.data,
       stop("egp.xi.interval must be increasing and straddle zero.")
     if(length(egp.prior.rate)!=1L || !is.finite(egp.prior.rate) || egp.prior.rate<=0)
       stop("egp.prior.rate must be a positive finite number.")
-    warning("Experimental EGP option: kappa is fixed at 1 and xi is global; downstream return sets and uniform-ball diagnostics are unavailable.",
+    warning("Experimental EGP option: kappa is fixed at 1 and xi is global; isotropic levels must remain above the fitted quantile threshold.",
             call.=FALSE)
   }
 
@@ -459,6 +459,10 @@ fit_GL <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list()){
 #'
 #' @examples
 sample_QGW_posterior <- function(fitted.mod,N.w,S_B=NA,transf.G=FALSE){
+  if(is_gp_excess_family(fitted.mod$options$excess.dist.fam)) {
+    if(transf.G) stop("A transformed geometric limit set is not a GP scale set.")
+    return(gp_sample_posterior(fitted.mod,N.w,S_B))
+  }
   if(ncol(fitted.mod$X)==2){
     post.samp <- sample_QGW_posterior_2d(fitted.mod,N.w,S_B=S_B,transf.G=transf.G)
   }else if(ncol(fitted.mod$X)==3){
@@ -515,8 +519,24 @@ prob_estimation <- function(fitted.mod,post.sample,x_B,y_B){
 #'
 #' @examples
 return_set <- function(fitted.mod,set="classic",alpha=0.05,conf="sim",t=NA,q.prime=NA,include.Qq=FALSE,LapTransf=NA,n.MC.samp=10000){
-  if(is_gp_excess_family(fitted.mod$options$excess.dist.fam)){
-    stop("Return sets for GP/experimental EGP excesses are not implemented; negative xi also imposes a finite radial endpoint.")
+  if(is_gp_excess_family(fitted.mod$options$excess.dist.fam)) {
+    if(!all(is.na(t)) && !all(is.na(q.prime))) stop("Specify t or q.prime, not both.")
+    if(all(is.na(t))) {
+      if(!length(q.prime) || anyNA(q.prime) || any(!is.finite(q.prime)) ||
+         any(q.prime<fitted.mod$options$q | q.prime>=1)) stop("Invalid GP probability levels.")
+      t <- 1/(1-q.prime)
+    }
+    if(!set %in% c('classic','isotropic')) stop("set must be classic or isotropic.")
+    if(ncol(fitted.mod$X)==3L && length(t)>1L)
+      stop("Specify one return period for the existing 3D plotting interface.")
+    out <- gp_return_sets(fitted.mod,sort(t),alpha,conf,include.Qq,
+                          isotropic=(set=='isotropic'),n.integration=n.MC.samp)
+    if(!is.logical(LapTransf)) {
+      out$pars$marginals <- 'Original'; out$X <- toOriginalMargins(out$X,LapTransf)
+      for(k in seq.int(3L,length(out))) for(nm in c('mean','lower','upper'))
+        out[[k]][[nm]] <- toOriginalMargins(out[[k]][[nm]],LapTransf)
+    }
+    return(out)
   }
   if(inherits(t,"logical") & inherits(q.prime,"logical")){
     stop("Specify a value for t or q.prime.")
@@ -924,9 +944,10 @@ K_hat <- function(thinned_U,subset,s=seq(0, 2, len=30),phi=seq(0, pi, len=30)){
 #' @export
 #'
 #' @examples
-X_to_uniform_on_Ball <- function(fitted.mod){
+X_to_uniform_on_Ball <- function(fitted.mod,q=NULL,n.integration=16384L){
   if(is_gp_excess_family(fitted.mod$options$excess.dist.fam))
-    stop("The uniform-ball diagnostic is currently implemented only for excess.dist.fam='E'.")
+    return(gp_uniform_ball(fitted.mod,q,n.integration))
+  if(!is.null(q)) stop("An explicit diagnostic q is currently supported only for GP/EGP fits.")
   d <- ncol(fitted.mod$X)
 
   if(d==2){

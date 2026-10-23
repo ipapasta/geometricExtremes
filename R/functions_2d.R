@@ -241,6 +241,12 @@ fit_GL_2d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(
     fitted.mod$model.convention <- "manuscript-v1"
     fitted.mod$model.name <- architecture
 
+    if(is_gp_excess_family(options$excess.dist.fam)) {
+      fitted.mod <- gp_store_draws(fitted.mod,fit_GW,options,2L,log.k,i)
+      if(config$save) save(fitted.mod,file=paste0(config$save.path,
+        config$file.nm,"_n",nrow(X),"_q",options$q,".RData"))
+      next
+    }
     # Generate intensities and g
     if(options$excess.dist.fam=="E"){
       if(architecture=="shared-geometry"){
@@ -290,45 +296,6 @@ fit_GL_2d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(
       fitted.mod$log.L[[i]] <- lapply(post_joint,function(xx) xx[[1]])
       fitted.mod$g[[i]]         <- lapply(post_joint,function(xx) xx[[2]])
       fitted.mod$G[[i]]   <- lapply(post_joint,function(xx) xx[[3]])
-    }else if(is_gp_excess_family(options$excess.dist.fam)){
-      xi.fit <- extract_gp_tail(fit_GW)
-      xi.est <- xi.fit$mean
-      scale.factor <- gp_quantile_to_scale(1,xi.est,alpha)
-      if(architecture=="shared-geometry"){
-        post_joint <- generate(n.samples = options$N.GW,
-                               x         = fit_GW ,
-                               newdata   = data.frame(W=mesh$loc),
-                               formula   = ~list(Int.W + 2*Int.G + 2*zeta + log.k,
-                                                 scale.factor*exp(Int.G+zeta)),
-                               seed      = options$seed, num.threads=1)
-      }else if(architecture=="decoupled"){
-        post_joint <- generate(n.samples = options$N.GW,
-                               x         = fit_GW ,
-                               newdata   = data.frame(W=mesh$loc),
-                               formula   = ~list(Int.W - phi + log.k,
-                                                 scale.factor*exp(Int.G+zeta)),
-                               seed      = options$seed, num.threads=1)
-      }else if(architecture=="residual-adjustment"){
-        post_joint <- generate(n.samples = options$N.GW,
-                               x         = fit_GW ,
-                               newdata   = data.frame(W=mesh$loc),
-                               formula   = ~list(Int.W + 2*Int.G + 2*zeta - phi + log.k,
-                                                 scale.factor*exp(Int.G+zeta),
-                                                 phi,
-                                                 Int.W,
-                                                 log.k),
-                               seed      = options$seed, num.threads=1)
-        fitted.mod$phi[[i]]         <- lapply(post_joint,function(xx) xx[[3]])
-        fitted.mod$Int.W[[i]]         <- lapply(post_joint,function(xx) xx[[4]])
-        fitted.mod$log.k[[i]]         <- lapply(post_joint,function(xx) xx[[5]])
-      }
-
-      fitted.mod$log.L[[i]]   <- lapply(post_joint,function(xx) xx[[1]])
-      fitted.mod$G[[i]]       <- lapply(post_joint,function(xx) xx[[2]])
-      fitted.mod$xi[[i]]      <- xi.est
-      fitted.mod$xi.summary[[i]] <- xi.fit$summary
-      fitted.mod$xi.marginal[[i]] <- xi.fit$marginal
-      fitted.mod$kappa[[i]]   <- 1
     }
 
     if(config$save){
@@ -466,6 +433,10 @@ sample_LGCP_fix <- function(n,log.L,fitted.mod,mesh,limits.W_B=NA){
 #'
 #' @examples
 sample_QGW_posterior_2d <- function(fitted.mod,N.w,S_B=NA,transf.G=F){
+  if(is_gp_excess_family(fitted.mod$options$excess.dist.fam)) {
+    if(transf.G) stop("A transformed geometric limit set is not a GP scale set.")
+    return(gp_sample_posterior(fitted.mod,N.w,S_B))
+  }
 
   mesh <- fitted.mod$mesh
   N.Qq <- length(fitted.mod$G)
@@ -575,6 +546,8 @@ get_rinfsup <- function(w,x,y,zero_in_B=FALSE){
 #'
 #' @examples
 prob_estimation_2d <- function(fitted.mod,post.sample,x,y){
+  if(is_gp_excess_family(fitted.mod$options$excess.dist.fam))
+    return(gp_box_probability(fitted.mod,post.sample,x,y))
 
   excess.dist.fam <- fitted.mod$options$excess.dist.fam
   x <- sort(x); y <- sort(y)
@@ -798,6 +771,8 @@ chi_posterior <- function(fitted.mod,u,conditioning.marg=1,N.w=5000,transf.G=F){
 #'
 #' @examples
 return_set_2d <- function(fitted.mod,alpha=0.05,t,conf="sim",include.Qq=FALSE){
+  if(is_gp_excess_family(fitted.mod$options$excess.dist.fam))
+    return(gp_return_sets(fitted.mod,t,alpha,conf,include.Qq))
 
   if(include.Qq==TRUE){
     ret_set_list <- list(pars=list(t=c(1/(1-fitted.mod$options$q),t),
@@ -877,7 +852,7 @@ return_set_2d <- function(fitted.mod,alpha=0.05,t,conf="sim",include.Qq=FALSE){
 #' @examples
 return_set_2d_isotropic <- function(fitted.mod,alpha=0.05,conf="sim",t,n.MC.samp=10000){
   if(is_gp_excess_family(fitted.mod$options$excess.dist.fam))
-    stop("Isotropic return sets are currently implemented only for excess.dist.fam='E'.")
+    return(gp_return_sets(fitted.mod,t,alpha,conf,isotropic=TRUE,n.integration=n.MC.samp))
   ret_set_list <- list(pars=list(t=t,
                                  marginals = "Laplace"),
                        X=fitted.mod$X)
@@ -1514,6 +1489,8 @@ plot_return_sets_2d <- function(fitted.mod,list_ret_sets,cex.pts=0.4,cex.axis=1.
 #'
 #' @examples
 pp_R_w_2d <- function(fitted.mod,n.samp){
+  if(is_gp_excess_family(fitted.mod$options$excess.dist.fam))
+    return(gp_radial_pp(fitted.mod))
 
   options <- fitted.mod$options
   mesh <- fitted.mod$mesh
@@ -1563,6 +1540,8 @@ pp_R_w_2d <- function(fitted.mod,n.samp){
 #'
 #' @examples
 pp_W_2d <- function(fitted.mod,n.samp,thresh.num=NA){
+  if(is_gp_excess_family(fitted.mod$options$excess.dist.fam))
+    return(gp_directional_pp(fitted.mod,n.samp,thresh.num))
   mesh <- fitted.mod$mesh
   X <- fitted.mod$X
   R <- apply(X, 1, function(x) sqrt(sum(x^2)))
@@ -1602,9 +1581,10 @@ pp_W_2d <- function(fitted.mod,n.samp,thresh.num=NA){
 #' @export
 #'
 #' @examples
-X_to_uniform_on_Ball_2d <- function(fitted.mod){
+X_to_uniform_on_Ball_2d <- function(fitted.mod,q=NULL,n.integration=16384L){
   if(is_gp_excess_family(fitted.mod$options$excess.dist.fam))
-    stop("The uniform-ball diagnostic is currently implemented only for excess.dist.fam='E'.")
+    return(gp_uniform_ball(fitted.mod,q,n.integration))
+  if(!is.null(q)) stop("An explicit diagnostic q is currently supported only for GP/EGP fits.")
 
   get_integrating_constant_2d <- function(mesh,log.f,n.MC.samp){
     Us <- runif(n.MC.samp,-pi,pi)

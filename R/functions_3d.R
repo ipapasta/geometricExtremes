@@ -248,6 +248,11 @@ fit_GL_3d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(
     }
 
 
+    if(is_gp_excess_family(options$excess.dist.fam)) {
+      fitted.mod <- gp_store_draws(fitted.mod,fit_GW,options,3L,log(k),i)
+      if(config$save) save(fitted.mod,file=paste0(config$save.path,config$file.nm,".RData"))
+      next
+    }
     if(options$excess.dist.fam=="E"){
       # Generate intensities and g
       if(architecture=="shared-geometry"){
@@ -275,42 +280,6 @@ fit_GL_3d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(
                                                  exp(-Int.G-zeta), phi, Int.W),
                                seed      = options$seed, num.threads=1)
       }
-    }else if(is_gp_excess_family(options$excess.dist.fam)){
-      xi.fit <- extract_gp_tail(fit_GW)
-      xi.est <- xi.fit$mean
-      scale.factor <- gp_quantile_to_scale(1,xi.est,alpha)
-      inverse.scale.factor <- 1/scale.factor
-      if(architecture=="shared-geometry"){
-        post_joint <- generate(n.samples = options$N.GW,
-                               x         = fit_GW ,
-                               newdata   = mesh.globe.df,
-                               formula   = ~list(Int.W + 3*Int.G + 3*zeta + log(k),
-                                                 inverse.scale.factor/exp(Int.G+zeta),
-                                                 scale.factor*exp(Int.G+zeta)),
-                               seed      = options$seed, num.threads=1)
-      }else if(architecture=="decoupled"){
-        post_joint <- generate(n.samples = options$N.GW,
-                               x         = fit_GW ,
-                               newdata   = mesh.globe.df,
-                               formula   = ~list(Int.W - phi + log(k),
-                                                 inverse.scale.factor/exp(Int.G+zeta),
-                                                 scale.factor*exp(Int.G+zeta)),
-                               seed      = options$seed, num.threads=1)
-      }else if(architecture=="residual-adjustment"){
-        post_joint <- generate(n.samples = options$N.GW,
-                               x         = fit_GW ,
-                               newdata   = mesh.globe.df,
-                               formula   = ~list(Int.W + 3*Int.G + 3*zeta - phi + log(k),
-                                                 inverse.scale.factor/exp(Int.G+zeta),
-                                                 scale.factor*exp(Int.G+zeta),
-                                                 phi,
-                                                 Int.W,
-                                                 log(k)),
-                               seed      = options$seed, num.threads=1)
-        fitted.mod$phi[[i]]         <- lapply(post_joint,function(xx) xx[[4]])
-        fitted.mod$Int.W[[i]]         <- lapply(post_joint,function(xx) xx[[5]])
-        fitted.mod$log.k[[i]]         <- lapply(post_joint,function(xx) xx[[6]])
-      }
     }
 
 
@@ -337,11 +306,6 @@ fit_GL_3d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(
           xx[[1]] + 3*log(xx[[2]]) - log(k))
       }
       fitted.mod$log.k[[i]] <- lapply(post_joint, function(xx) log(k))
-    } else {
-      fitted.mod$xi[[i]] <- xi.est
-      fitted.mod$xi.summary[[i]] <- xi.fit$summary
-      fitted.mod$xi.marginal[[i]] <- xi.fit$marginal
-      fitted.mod$kappa[[i]] <- 1
     }
     fitted.mod$log.L[[i]] <- lapply(post_joint,function(xx) xx[[1]])
     fitted.mod$g[[i]]     <- lapply(post_joint,function(xx) xx[[2]])
@@ -376,6 +340,8 @@ sample_LGCP_fix_3d <- function(n,log.L,fitted.mod){
 #'
 #' @examples
 sample_QGW_posterior_3d <- function(fitted.mod,N.w){
+  if(is_gp_excess_family(fitted.mod$options$excess.dist.fam))
+    return(gp_sample_posterior(fitted.mod,N.w))
 
   mesh <- fitted.mod$mesh
   N.Qq <- length(fitted.mod$G)
@@ -433,6 +399,8 @@ sample_QGW_posterior_3d <- function(fitted.mod,N.w){
 #'
 #' @examples
 return_set_3d <- function(fitted.mod,alpha=0.05,conf="sim",t){
+  if(is_gp_excess_family(fitted.mod$options$excess.dist.fam))
+    return(gp_return_sets(fitted.mod,t,alpha,conf))
   ret_set_list <- list(pars=list(t=t,
                                  marginals = "Laplace"),
                        X=fitted.mod$X)
@@ -484,7 +452,7 @@ return_set_3d <- function(fitted.mod,alpha=0.05,conf="sim",t){
 #' @examples
 return_set_3d_isotropic <- function(fitted.mod,alpha=0.05,conf="sim",t,n.MC.samp=10000){
   if(is_gp_excess_family(fitted.mod$options$excess.dist.fam))
-    stop("Isotropic return sets are currently implemented only for excess.dist.fam='E'.")
+    return(gp_return_sets(fitted.mod,t,alpha,conf,isotropic=TRUE,n.integration=n.MC.samp))
   ret_set_list <- list(pars=list(t=t,
                                  marginals = "Laplace"),
                        X=fitted.mod$X)
@@ -859,9 +827,10 @@ get_rinfsup_3d <- function(w,x,y,z){
 #' @export
 #'
 #' @examples
-X_to_uniform_on_Ball_3d <- function(fitted.mod){
+X_to_uniform_on_Ball_3d <- function(fitted.mod,q=NULL,n.integration=16384L){
   if(is_gp_excess_family(fitted.mod$options$excess.dist.fam))
-    stop("The uniform-ball diagnostic is currently implemented only for excess.dist.fam='E'.")
+    return(gp_uniform_ball(fitted.mod,q,n.integration))
+  if(!is.null(q)) stop("An explicit diagnostic q is currently supported only for GP/EGP fits.")
 
   get_integrating_constant_3d <- function(mesh,log.f,n.MC.samp){
     Us <- t(apply(matrix(rnorm(3*n.MC.samp),ncol=3),1,function(x) x/sqrt(sum(x^2))))
