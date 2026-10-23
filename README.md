@@ -40,9 +40,6 @@ underlying fits and investigate solver/prior sensitivity. Tail fitting and
 posterior sampling default to one thread. `log.L` contains unnormalised
 log-intensities, not normalised directional densities.
 
-See [validation/README.md](validation/README.md) for checks, observed limitations,
-and reproduction commands. No new coverage claim is made from smoke tests.
-
 ## Examples
 
 Examples and explanations are found [here](EXAMPLES.md).
