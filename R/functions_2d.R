@@ -26,10 +26,10 @@ fit_Qq_2d <- function(X,options,config,return_fitted_obj=F){
 
   ## Definition of mesh and prior
   if(sum(range(options$mesh.knots.2d)==c(-pi,pi))==2){
-    mesh             <- inla.mesh.1d(sort(options$mesh.knots.2d),
+    mesh             <- fmesher::fm_mesh_1d(sort(options$mesh.knots.2d),
                                      boundary="cyclic",degree=1)
   }else{
-    mesh             <- inla.mesh.1d(sort(options$mesh.knots.2d),
+    mesh             <- fmesher::fm_mesh_1d(sort(options$mesh.knots.2d),
                                      boundary="neumann",degree=1)
   }
 
@@ -44,13 +44,13 @@ fit_Qq_2d <- function(X,options,config,return_fitted_obj=F){
                 control.family = list(control.link = list(model="quantile", quantile=options$q)))
 
   Qq.post.samp <- generate(n.samples = options$N.Qq,
-                           object    = fit.Qq,
+                           x         = fit.Qq,
                            newdata   = data.frame(W=mesh$loc),#data.frame(x=X[,1], y=X[,2]),
                            formula   = ~ exp(Intercept+spde1),
-                           seed      = options$seed)
+                           seed      = options$seed, num.threads=1)
 
   prop.exc <- rep(NA,options$N.Qq)
-  A.Qq <- inla.mesh.projector(mesh=mesh,loc=dfRW$W)$proj$A
+  A.Qq <- fmesher::fm_basis(mesh,loc=dfRW$W)
   for(i in 1:options$N.Qq){
     dfRW$thres.gamma  <- as.vector(A.Qq %*%Qq.post.samp[,i])
     is.excess         <- ifelse(dfRW$R - dfRW$thres.gamma > 0 , 1, 0)
@@ -97,7 +97,7 @@ fit_Qq_2d <- function(X,options,config,return_fitted_obj=F){
 #' @noRd
 #'
 #' @examples
-fit_GL_2d <- function(fitted.Qq,config){
+fit_GL_2d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list()){
 
   X <- fitted.Qq$X
   options <- fitted.Qq$options
@@ -107,13 +107,9 @@ fit_GL_2d <- function(fitted.Qq,config){
   W <- atan2(y=X[,2], x=X[,1])
   dfRW <- data.frame(R=R, W=W)
 
-  ## Definition of mesh and prior
-  if(sum(range(options$mesh.knots.2d)==c(-pi,pi))==2){
-    mesh             <- inla.mesh.1d(sort(options$mesh.knots.2d),
-                                     boundary="cyclic",degree=1)
-  }else{
-    mesh             <- inla.mesh.1d(sort(options$mesh.knots.2d),degree=1)
-  }
+  # Reuse the threshold mesh: coefficients must retain the same basis ordering.
+  mesh <- fitted.Qq$mesh
+  architecture <- directional_architecture(options$W.model)
 
   Qq.post.samp <- fitted.Qq$Qq
   if(options$excess.dist.fam=="E"){
@@ -153,21 +149,17 @@ fit_GL_2d <- function(fitted.Qq,config){
   # circular.Matern_zeta  <- rspde.matern(mesh = mesh,B.sigma = B.sigma,B.range = B.range,
   #                                       parameterization = "matern")
 
-  if(options$W.model=="M1"){
+  if(architecture=="shared-geometry"){
     cmp.GW <- ~ 0 + Int.G(1) + Int.W(1) + zeta(W, model = circular.Matern_zeta)
-  }else if(options$W.model=="M2" | options$W.model=="M3"){
-    weights.domain     <- fm_int(domain=mesh, samplers=c(-pi,pi)) #ipoints(domain=mesh, samplers=c(-pi,pi))
-    locs               <- weights.domain$x
-    A.constr           <- inla.spde.make.A(mesh=mesh, loc=locs, weights=weights.domain$weight*499/(2*pi),#weights.domain$weight,
-                                           block=rep(1, nrow(weights.domain)))
-    A.constr <- matrix(c(0.5,rep(1,mesh$n-1)),nrow=1)
-    circular.Matern_phi  <- inla.spde2.pcmatern(mesh, prior.range = options$phi.prior.range,
-                                                prior.sigma = options$phi.prior.sigma,
-                                                extraconstr=list(A=as.matrix(A.constr,nrow=1), e=matrix(0, ncol = 1)))
+  }else{
+    # phi = -2 log(r_B); constrain its FEM integral, not Int.W.
+    circular.Matern_phi <- INLA::inla.spde2.pcmatern(
+      mesh, prior.range=options$phi.prior.range,
+      prior.sigma=options$phi.prior.sigma, constr=TRUE)
     cmp.GW <- ~ 0 + Int.G(1) + Int.W(1) + zeta(W, model = circular.Matern_zeta) + phi(W, model = circular.Matern_phi)
   }
 
-  A.Qq <- inla.mesh.projector(mesh=mesh,loc=dfRW$W)$proj$A
+  A.Qq <- fmesher::fm_basis(mesh,loc=dfRW$W)
   if(options$use.mean.Qq==TRUE){
     N.Qq <- 1
   }else{
@@ -191,6 +183,7 @@ fit_GL_2d <- function(fitted.Qq,config){
 
     dfRW.exc.only         <- dfRW[dfRW$excess.gamma > 0,] #dfRW %>% dplyr::filter(excess.gamma > 0)
     dfRW$excess.gamma     <- ifelse(dfRW$excess.gamma>0,dfRW$excess.gamma, NA)
+    if (!nrow(dfRW.exc.only)) stop("No radial exceedances for threshold draw ", i)
 
     if(options$W.data=="AllW"){
       log.k <- log(nrow(dfRW))
@@ -200,54 +193,56 @@ fit_GL_2d <- function(fitted.Qq,config){
 
     alpha <- options$alpha
     if(options$excess.dist.fam=="E"){
-      if(options$W.model=="M1"){
+      if(architecture=="shared-geometry"){
         form.W  <- W ~ 0 + Int.W - 2*Int.G - 2*zeta + log.k
-      }else if(options$W.model=="M2"){
+      }else if(architecture=="decoupled"){
         form.W  <- W ~ 0 + Int.W - phi + log.k
-      }else if(options$W.model=="M3"){
+      }else if(architecture=="residual-adjustment"){
         form.W  <- W ~ 0 + Int.W - 2*Int.G - 2*zeta - phi + log.k
       }
       form.G <- excess.gamma ~ 0 + Int.G + zeta
-      lik_G <- like("exponential", formula=form.G, data=dfRW.exc.only)
+      lik_G <- inlabru::bru_obs(family="exponential", formula=form.G, data=dfRW.exc.only)
     }else if(options$excess.dist.fam=="GP"){
-      if(options$W.model=="M1"){
+      if(architecture=="shared-geometry"){
         form.W  <- W ~ 0 + Int.W + 2*Int.G + 2*zeta + log.k
-      }else if(options$W.model=="M2"){
+      }else if(architecture=="decoupled"){
         form.W  <- W ~ 0 + Int.W - phi + log.k
-      }else if(options$W.model=="M3"){
+      }else if(architecture=="residual-adjustment"){
         form.W  <- W ~ 0 + Int.W + 2*Int.G + 2*zeta - phi + log.k
       }
       form.G  <- excess.gamma ~ 0 + Int.G + zeta
-      lik_G <- like("gp", formula=form.G, data=dfRW.exc.only,
+      lik_G <- inlabru::bru_obs(family="gp", formula=form.G, data=dfRW.exc.only,
                     control.family = list(control.link = list(quantile = alpha)))
     }
 
 
     if(options$W.data=="AllW"){
-      lik_W  <- like("cp", formula=form.W, data=dfRW, domain=list(W=mesh))
+      lik_W <- inlabru::bru_obs(family="cp", formula=form.W, data=dfRW, domain=list(W=mesh))
     }else if(options$W.data=="ExcOnly"){
-      lik_W  <- like("cp", formula=form.W, data=dfRW.exc.only, domain=list(W=mesh))
+      lik_W <- inlabru::bru_obs(family="cp", formula=form.W, data=dfRW.exc.only, domain=list(W=mesh))
     }
 
 
     fit_GW <- bru(cmp.GW, lik_W, lik_G,
-                  options = list(bru_max_iter = 1,
-                                 num.threads=8,
-                                 verbose = FALSE))
+                  options = utils::modifyList(list(bru_max_iter=1,
+                    num.threads=1, verbose=FALSE), bru_options))
+    if (return_fitted_obj) fitted.mod$GL.fit.obj[[i]] <- fit_GW
+    fitted.mod$model.convention <- "manuscript-v1"
+    fitted.mod$model.name <- architecture
 
     # Generate intensities and g
     if(options$excess.dist.fam=="E"){
-      if(options$W.model=="M1"){
+      if(architecture=="shared-geometry"){
         post_joint <- generate(n.samples = options$N.GW,
-                               object    = fit_GW ,
+                               x         = fit_GW ,
                                newdata   = data.frame(W=mesh$loc),
                                formula   = ~list(Int.W - 2*Int.G - 2*zeta + log.k,
                                                  exp(Int.G+zeta),
                                                  exp(-Int.G-zeta)),
-                               seed      = options$seed)
-      }else if(options$W.model=="M2"){
+                               seed      = options$seed, num.threads=1)
+      }else if(architecture=="decoupled"){
         post_joint <- generate(n.samples = options$N.GW,
-                               object    = fit_GW ,
+                               x         = fit_GW ,
                                newdata   = data.frame(W=mesh$loc),
                                formula   = ~list(Int.W - phi + log.k,
                                                  exp(Int.G+zeta),
@@ -255,10 +250,10 @@ fit_GL_2d <- function(fitted.Qq,config){
                                                  phi,
                                                  Int.W,
                                                  log.k),
-                               seed      = options$seed)
-      }else if(options$W.model=="M3"){
+                               seed      = options$seed, num.threads=1)
+      }else if(architecture=="residual-adjustment"){
         post_joint <- generate(n.samples = options$N.GW,
-                               object    = fit_GW,
+                               x         = fit_GW,
                                newdata   = data.frame(W=mesh$loc),
                                formula   = ~list(Int.W - 2*Int.G - 2*zeta - phi + log.k,
                                                  exp(Int.G+zeta),
@@ -266,41 +261,50 @@ fit_GL_2d <- function(fitted.Qq,config){
                                                  phi,
                                                  Int.W,
                                                  log.k),
-                               seed      = options$seed)
+                               seed      = options$seed, num.threads=1)
         fitted.mod$phi[[i]]         <- lapply(post_joint,function(xx) xx[[4]])
         fitted.mod$Int.W[[i]]         <- lapply(post_joint,function(xx) xx[[5]])
         fitted.mod$log.k[[i]]         <- lapply(post_joint,function(xx) xx[[6]])
       }
 
+      # Retain jointly sampled diagnostics for all three architectures.
+      if (architecture != "shared-geometry") {
+        fitted.mod$phi[[i]] <- lapply(post_joint, function(xx) xx[[4]])
+        fitted.mod$Int.W[[i]] <- lapply(post_joint, function(xx) xx[[5]])
+      } else {
+        fitted.mod$Int.W[[i]] <- lapply(post_joint, function(xx)
+          xx[[1]] + 2*log(xx[[2]]) - log.k)
+      }
+      fitted.mod$log.k[[i]] <- lapply(post_joint, function(xx) log.k)
       fitted.mod$log.L[[i]] <- lapply(post_joint,function(xx) xx[[1]])
       fitted.mod$g[[i]]         <- lapply(post_joint,function(xx) xx[[2]])
       fitted.mod$G[[i]]   <- lapply(post_joint,function(xx) xx[[3]])
     }else if(options$excess.dist.fam=="GP"){
       xi.est <- fit_GW$summary.hyperpar$mean[1]
-      if(options$W.model=="M1"){
+      if(architecture=="shared-geometry"){
         post_joint <- generate(n.samples = options$N.GW,
-                               object    = fit_GW ,
+                               x         = fit_GW ,
                                newdata   = data.frame(W=mesh$loc),
                                formula   = ~list(Int.W + 2*Int.G + 2*zeta + log.k,
                                                  xi.est*exp(Int.G+zeta)/((1-alpha)^(-xi.est)-1)),
-                               seed      = options$seed)
-      }else if(options$W.model=="M2"){
+                               seed      = options$seed, num.threads=1)
+      }else if(architecture=="decoupled"){
         post_joint <- generate(n.samples = options$N.GW,
-                               object    = fit_GW ,
+                               x         = fit_GW ,
                                newdata   = data.frame(W=mesh$loc),
                                formula   = ~list(Int.W - phi + log.k,
                                                  xi.est*exp(Int.G+zeta)/((1-alpha)^(-xi.est)-1)),
-                               seed      = options$seed)
-      }else if(options$W.model=="M3"){
+                               seed      = options$seed, num.threads=1)
+      }else if(architecture=="residual-adjustment"){
         post_joint <- generate(n.samples = options$N.GW,
-                               object    = fit_GW ,
+                               x         = fit_GW ,
                                newdata   = data.frame(W=mesh$loc),
                                formula   = ~list(Int.W + 2*Int.G + 2*zeta - phi + log.k,
                                                  xi.est*exp(Int.G+zeta)/((1-alpha)^(-xi.est)-1),
                                                  phi,
                                                  Int.W,
                                                  log.k),
-                               seed      = options$seed)
+                               seed      = options$seed, num.threads=1)
         fitted.mod$phi[[i]]         <- lapply(post_joint,function(xx) xx[[3]])
         fitted.mod$Int.W[[i]]         <- lapply(post_joint,function(xx) xx[[4]])
         fitted.mod$log.k[[i]]         <- lapply(post_joint,function(xx) xx[[5]])
@@ -329,10 +333,10 @@ fit_GL_2d <- function(fitted.Qq,config){
 #' @param log.L   natural logarithm of the unnormalised density of angles W.
 #' @param mesh        INLA object for the cyclic mesh on the 1-sphere.
 #' @param limits.W_B  vector of lower and upper limits of angles (polar) for sampling region.
-#' @param fitted.mod
+#' @param fitted.mod Fitted model returned by fit_GL.
 #'
 #' @import INLA
-#' @return Set of n observed angles from log.L.
+#' @return A list of transformed point patterns. Set of n observed angles from log.L.
 #' @noRd
 #'
 #' @examples
@@ -341,21 +345,22 @@ sample_LGCP_acc_rej_B <- function(n,fitted.mod,log.L,mesh,limits.W_B){
 
   mesh.len <- length(mesh$loc)
 
-  mesh.mod <- c(mesh$loc,abs(mesh$loc[1]))
+  if (!is.finite(circle_log_integral(log.L,mesh,limits.W_B)))
+    stop("Sampling interval must have positive width.")
+  mesh.mod <- mesh$loc
+  log.L <- log.L - max(log.L)
+  L.mod <- exp(log.L)
 
-  L.mod <- exp(c(log.L,abs(log.L[1]))+log(0.01))
+  A <- fmesher::fm_basis(mesh,loc=limits.W_B)
+  L.at.limits <- exp(as.vector(A %*%log.L))
 
-  A             <- inla.mesh.projector(mesh=mesh,loc=limits.W_B)$proj$A
-  L.at.limits <- exp(as.vector(A %*%log.L)+log(0.01))
-
-  min.mesh.B <- min(which(mesh.mod>limits.W_B[1]))
-  max.mesh.B <- max(which(mesh.mod<limits.W_B[2]))
+  interior <- which(mesh.mod > limits.W_B[1] & mesh.mod < limits.W_B[2])
 
   log.L.B <- c(L.at.limits[1],
-               L.mod[min.mesh.B:max.mesh.B],
+               L.mod[interior],
                L.at.limits[2])
   mesh.B      <- c(limits.W_B[1],
-                   mesh$loc[min.mesh.B:max.mesh.B],
+                   mesh.mod[interior],
                    limits.W_B[2])
 
   inds <- cbind(c(1:(length(mesh.B)-1)),c(2:length(mesh.B)))
@@ -372,8 +377,8 @@ sample_LGCP_acc_rej_B <- function(n,fitted.mod,log.L,mesh,limits.W_B){
   prop.dist <- unlist(apply(inds,1,function(x) rep(step.fn[x[1]],each=n.by.mesh.int[x[1]])))
   acc.ref <- runif(n,0,prop.dist)
 
-  A <- inla.mesh.projector(mesh=mesh,loc=new.ws)$proj$A
-  log.L.new.ws <- exp(as.vector(A %*%log.L)+log(0.01))
+  A <- fmesher::fm_basis(mesh,loc=new.ws)
+  log.L.new.ws <- exp(as.vector(A %*%log.L))
 
   new.ws[acc.ref<log.L.new.ws]
 }
@@ -391,36 +396,8 @@ sample_LGCP_acc_rej_B <- function(n,fitted.mod,log.L,mesh,limits.W_B){
 #'
 #' @examples
 get_P_W <- function(log.L,mesh,limits.W_B){
-
-  mesh.len    <- length(mesh$loc)
-  mesh.mod    <- c(mesh$loc,abs(mesh$loc[1]))
-  L.mod <- exp(c(log.L,abs(log.L[1]))+log(0.01))
-
-  A             <- inla.mesh.projector(mesh=mesh,loc=limits.W_B)$proj$A
-  L.at.limits <- exp(as.vector(A %*%log.L)+log(0.01))
-
-  min.mesh.B <- min(which(mesh.mod>limits.W_B[1]))
-  max.mesh.B <- max(which(mesh.mod<limits.W_B[2]))
-
-  log.L.B <- c(L.at.limits[1],
-               L.mod[min.mesh.B:max.mesh.B],
-               L.at.limits[2])
-  mesh.B      <- c(limits.W_B[1],
-                   mesh$loc[min.mesh.B:max.mesh.B],
-                   limits.W_B[2])
-
-  h <- diff(mesh.B)
-  integrand <- sapply(c(1:length(h)),
-                      function(x){
-                        (log.L.B[x[1]]+log.L.B[x[1]+1])*h[x[1]]/2
-                      })
-
-  h <- diff(mesh.mod)
-  int.const <- sapply(c(1:mesh.len),
-                      function(x){
-                        (L.mod[x[1]]+L.mod[x[1]+1])*h[x[1]]/2
-                      })
-  sum(integrand)/sum(int.const)
+  exp(circle_log_integral(log.L, mesh, limits.W_B) -
+        circle_log_integral(log.L, mesh))
 }
 
 #' Sample n angles from the LGCP on an interval of the 1-sphere
@@ -449,8 +426,7 @@ sample_LGCP_fix <- function(n,log.L,fitted.mod,mesh,limits.W_B=NA){
                      limits.W_B)
     list(w=new.w,P.W_B=P.W_B)
   }else{
-    exp.num.samp <- numer_int(exp(log.L),mesh$loc)
-    mod.exp.num.samp <- log(n/exp.num.samp)
+    mod.exp.num.samp <- log(n) - circle_log_integral(log.L,mesh)
     new.w <- sample.lgcp(mesh,log.L+mod.exp.num.samp)$x
     while(length(new.w)<n){
       new.w <- c(new.w,
@@ -694,7 +670,6 @@ prob_estimation_2d <- function(fitted.mod,post.sample,x,y){
 #' @param N.w
 #' @param transf.G
 #'
-#' @import rmutil
 #' @return
 #' @noRd
 #'
@@ -874,13 +849,13 @@ return_set_2d <- function(fitted.mod,alpha=0.05,t,conf="sim",include.Qq=FALSE){
 
 #' Title
 #'
-#' @param fitted.mod
-#' @param alpha
-#' @param conf
-#' @param t
-#' @param n.MC.samp Number of integrating directions if set = "isotropic".
+#' @param fitted.mod Fitted model returned by fit_GL.
+#' @param alpha Tail probability for credible bands.
+#' @param conf Interval type, "sim" or "marg".
+#' @param t Return period.
+#' @param n.MC.samp Deprecated integration-size argument; retained for compatibility.
 #'
-#' @return
+#' @return A list of posterior isotropic return-set summaries.
 #' @export
 #'
 #' @examples
@@ -894,7 +869,7 @@ return_set_2d_isotropic <- function(fitted.mod,alpha=0.05,conf="sim",t,n.MC.samp
 
     A <- inla.mesh.projector(mesh=mesh,loc=Us)$proj$A
     lambda_at_Us <- exp(as.vector(A %*%log.f))
-    int_const <- 4*pi*mean(lambda_at_Us)
+    int_const <- 2*pi*mean(lambda_at_Us)
     int_const
   }
 
@@ -912,8 +887,8 @@ return_set_2d_isotropic <- function(fitted.mod,alpha=0.05,conf="sim",t,n.MC.samp
     for(i in 1:fitted.mod$options$N.Qq){
       for(j in 1:fitted.mod$options$N.GW){
         message("Q_q: ",toString(i),"/",fitted.mod$options$N.Qq," and G,W: ", toString(j),"/",length(fitted.mod$log.L[[1]]))
-        C <- get_integrating_constant_2d(fitted.mod$mesh,fitted.mod$log.L[[i]][[j]],n.MC.samp)
-        f_W <- exp(fitted.mod$log.L[[i]][[j]])/C
+        log.C <- circle_log_integral(fitted.mod$log.L[[i]][[j]], fitted.mod$mesh)
+        f_W <- exp(fitted.mod$log.L[[i]][[j]] - log.C)
         ret.set <- fitted.mod$Qq[,i] + K*fitted.mod$G[[i]][[j]]
         ret.set.omni <- ret.set + log(f_W/fW.uniform) * fitted.mod$G[[i]][[j]]
         post.ret.set[cnt,] <- ret.set.omni
@@ -1326,9 +1301,8 @@ plot_W_2d <- function(fitted.mod,alpha,conf="sim",xylim,main="",mid.gap=0.1, txt
   cnt <- 1
   for(i in 1:length(fitted.mod$G)){
     for(j in 1:length(fitted.mod$G[[1]])){
-      f_W <- exp(fitted.mod$log.L[[i]][[j]])
-      intt <- numer_int(f_W,mesh)
-      m[cnt,] <- f_W/intt
+      ell <- fitted.mod$log.L[[i]][[j]]
+      m[cnt,] <- exp(ell - circle_log_integral(ell,fitted.mod$mesh))
       cnt <- cnt + 1
     }
   }
@@ -1609,9 +1583,9 @@ pp_W_2d <- function(fitted.mod,n.samp,thresh.num=NA){
 
 #' Title
 #'
-#' @param fitted.mod
+#' @param fitted.mod Fitted model returned by fit_GL.
 #'
-#' @return
+#' @return A nested list of transformed point-pattern matrices.
 #' @export
 #'
 #' @examples
@@ -1661,8 +1635,8 @@ X_to_uniform_on_Ball_2d <- function(fitted.mod){
 
     for(j in 1:length(fitted.mod$log.L[[1]])){
       message("Q_q: ",toString(i),"/",N.Qq," and G,W: ", toString(j),"/",length(fitted.mod$log.L[[1]]))
-      C <- get_integrating_constant_2d(fitted.mod$mesh,fitted.mod$log.L[[i]][[j]],1000000)
-      f_W_at_wobs <- exp(as.vector(A.obs %*%fitted.mod$log.L[[i]][[j]]))/C
+      log.C <- circle_log_integral(fitted.mod$log.L[[i]][[j]],fitted.mod$mesh)
+      f_W_at_wobs <- exp(as.vector(A.obs %*%fitted.mod$log.L[[i]][[j]]) - log.C)
 
       r_G_at_wobs <- as.vector(A.obs %*% fitted.mod$G[[i]][[j]])
 

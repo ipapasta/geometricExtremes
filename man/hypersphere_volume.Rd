@@ -9,7 +9,7 @@ hypersphere_volume(r, d)
 \arguments{
 \item{r}{radius of the sphere.}
 
-\item{d}{dimension of the hypersphere S^{d-1}.}
+\item{d}{Dimension of the hypersphere, \eqn{S^{d-1}}.}
 }
 \value{
 volume of the hypersphere.

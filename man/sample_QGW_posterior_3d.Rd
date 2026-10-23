@@ -7,7 +7,12 @@
 sample_QGW_posterior_3d(fitted.mod, N.w)
 }
 \arguments{
-\item{N.w}{}
+\item{fitted.mod}{Fitted model returned by fit_GL.}
+
+\item{N.w}{Number of directions sampled per posterior draw.}
+}
+\value{
+A nested list of sampled directions and radial quantities.
 }
 \description{
 Title

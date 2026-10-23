@@ -7,7 +7,10 @@
 X_to_uniform_on_Ball_2d(fitted.mod)
 }
 \arguments{
-\item{fitted.mod}{}
+\item{fitted.mod}{Fitted model returned by fit_GL.}
+}
+\value{
+A nested list of transformed point-pattern matrices.
 }
 \description{
 Title

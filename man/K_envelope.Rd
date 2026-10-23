@@ -17,11 +17,11 @@ K_envelope(
 \arguments{
 \item{n}{number of samples inside the unit hypersphere.}
 
-\item{d}{dimension of the hypersphere S^{d-1}.}
+\item{d}{Dimension of the hypersphere, \eqn{S^{d-1}}.}
 
 \item{subset}{geometry of the subset on which to count sets, "ball" or "sph cone".}
 
-\item{M}{number of montecarlo samples from a uniform sample on S^{d-1}.}
+\item{M}{Number of Monte Carlo samples from the uniform law on \eqn{S^{d-1}}.}
 
 \item{sig}{credibility level for the envelope.}
 

@@ -14,7 +14,6 @@ set.options(
   alpha,
   N.Qq,
   N.GW,
-  beta,
   QR.prior.range = c(1, 0.999),
   QR.prior.sigma = c(1, 0.8),
   zeta.prior.range = c(0.5, 0.999),
@@ -31,7 +30,7 @@ set.options(
 
 \item{excess.dist.fam}{Exponential ("E") or generalised Pareto ("GP") excesses.}
 
-\item{W.model}{"M1", "M2", or "M3", as indicated in Papastathopoulos et al. (2023).}
+\item{W.model}{Directional model: "M1" decoupled (L=B), "M2" shared-geometry (L=G), or "M3" residual-adjustment (L=BG). Before version 0.0.0.9001, M1 and M2 had the opposite meanings.}
 
 \item{W.data}{Angles to include in likelihood: all angles ("AllW") or only those of exceedances of Q_q ("ExcOnly").}
 

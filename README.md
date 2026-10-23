@@ -14,6 +14,35 @@
 remotes::install_github("ipapasta/geometricExtremes")
 ```
 
+## Directional models and migration
+
+From version 0.0.0.9001, model labels follow the revised manuscript:
+
+| Label | Name | Directional body |
+|---|---|---|
+| M1 | decoupled | L = B |
+| M2 | shared-geometry | L = G |
+| M3 | residual-adjustment | L = BG |
+
+**Breaking label change:** older package versions used M1 for shared geometry
+and M2 for the decoupled model. Swap M1/M2 when reproducing old analyses;
+M3 is unchanged. Do not reinterpret historical saved objects or filenames.
+New tail fits record `model.convention = "manuscript-v1"` and `model.name`.
+
+M1 and M3 constrain the finite-element surface integral of `phi` to zero,
+while estimating `Int.W` freely. The implementation uses `phi = -d*log(r_B)`;
+`phi.prior.sigma` describes the phi scale, not the log-radial scale. Existing
+prior hyperparameters are retained. Constraints change the prior and may change
+posterior uncertainty; they do not by themselves guarantee calibrated intervals.
+
+Use `fit_GL(..., return_fitted_obj=TRUE, bru_options=list(...))` to retain the
+underlying fits and investigate solver/prior sensitivity. Tail fitting and
+posterior sampling default to one thread. `log.L` contains unnormalised
+log-intensities, not normalised directional densities.
+
+See [validation/README.md](validation/README.md) for checks, observed limitations,
+and reproduction commands. No new coverage claim is made from smoke tests.
+
 ## Examples
 
 Examples and explanations are found [here](EXAMPLES.md).

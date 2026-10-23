@@ -13,7 +13,18 @@ return_set_2d_isotropic(
 )
 }
 \arguments{
-\item{n.MC.samp}{Number of integrating directions if set = "isotropic".}
+\item{fitted.mod}{Fitted model returned by fit_GL.}
+
+\item{alpha}{Tail probability for credible bands.}
+
+\item{conf}{Interval type, "sim" or "marg".}
+
+\item{t}{Return period.}
+
+\item{n.MC.samp}{Deprecated integration-size argument; retained for compatibility.}
+}
+\value{
+A list of posterior isotropic return-set summaries.
 }
 \description{
 Title

@@ -32,12 +32,13 @@ fit_Qq_3d <- function(X,options,config,return_fitted_obj=F){
                             X1=X[,1], X2=X[,2], X3=X[,3])
 
   ## Definition of mesh and prior
-  mesh.globe     <- inla.mesh.create(globe=options$mesh.res.3d, crs=fm_CRS("sphere"))
+  mesh.globe <- fmesher::fm_rcdt_2d_inla(globe=options$mesh.res.3d,
+                                          crs=fmesher::fm_CRS("sphere"))
   spherical.spde  <- inla.spde2.pcmatern(mesh.globe,
                                          prior.range = options$QR.prior.range,
                                          prior.sigma = options$QR.prior.sigma)
 
-  cmp.spherical   <- R ~ Intercept(1) + spde3(cbind(x, y, z), model=spherical.spde, mapper=bru_mapper(mesh.globe, indexed=TRUE))
+  cmp.spherical   <- R ~ Intercept(1) + spde3(cbind(x, y, z), model=spherical.spde, mapper=inlabru::bru_mapper(mesh.globe))
 
   fit.Qq <- bru(cmp.spherical, data = as.data.frame(dfRphitheta),
                 family="gamma",
@@ -54,15 +55,15 @@ fit_Qq_3d <- function(X,options,config,return_fitted_obj=F){
 
   Qq.mean  <- predict(fit.Qq,newdata=mesh.globe.df, ~ exp(Intercept+spde3),seed = options$seed)
   Qq.post.samp  <- generate(n.samples = options$N.Qq,
-                            object    = fit.Qq,
+                            x         = fit.Qq,
                             newdata   = mesh.globe.df,#data.frame(x=X[,1], y=X[,2]),
                             formula   = ~ exp(Intercept+spde3),
-                            seed      = options$seed)
+                            seed      = options$seed, num.threads=1)
 
   prop.exc <- rep(NA,options$N.Qq)
 
   data.unit.sphere <- sph2cart(cbind(as.matrix(dfRphitheta[,2:3]),1))
-  A.Qq <- inla.mesh.projector(mesh=mesh.globe,loc=data.unit.sphere)$proj$A
+  A.Qq <- fmesher::fm_basis(mesh.globe,loc=data.unit.sphere)
 
   for(i in 1:options$N.Qq){
     Qq.thetaphi <- as.vector(A.Qq %*% Qq.post.samp[,i])
@@ -106,9 +107,10 @@ fit_Qq_3d <- function(X,options,config,return_fitted_obj=F){
 #' @noRd
 #'
 #' @examples
-fit_GL_3d <- function(fitted.Qq,config){
+fit_GL_3d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list()){
   X <- fitted.Qq$X
   options <- fitted.Qq$options
+  architecture <- directional_architecture(options$W.model)
 
   polar.coord    <- cart2sph(as.matrix(X))
   theta <- polar.coord[,1]
@@ -138,18 +140,18 @@ fit_GL_3d <- function(fitted.Qq,config){
   spherical.spde.zeta  <- inla.spde2.pcmatern(mesh.globe,
                                               prior.range = options$zeta.prior.range,
                                               prior.sigma = options$zeta.prior.sigma)
-  spherical.spde.phi   <- inla.spde2.pcmatern(mesh.globe,
-                                              prior.range = options$phi.prior.range,
-                                              prior.sigma = options$phi.prior.sigma)
-
-  if(options$W.model=="M1"){
+  if(architecture=="shared-geometry"){
     cmp <- ~ 0 + Int.W(1) + Int.G(1) + zeta(coordinates, model = spherical.spde.zeta)
-  }else if(options$W.model=="M2" | options$W.model=="M3"){
+  }else{
+    # phi = -3 log(r_B); retain a free auxiliary Poisson intercept.
+    spherical.spde.phi <- INLA::inla.spde2.pcmatern(mesh.globe,
+      prior.range=options$phi.prior.range,
+      prior.sigma=options$phi.prior.sigma, constr=TRUE)
     cmp <- ~ 0 + Int.W(1) + Int.G(1) + zeta(coordinates, model = spherical.spde.zeta) + phi(coordinates, model = spherical.spde.phi)
   }
 
   data.unit.sphere <- sph2cart(cbind(as.matrix(dfRphitheta[,2:3]),1))
-  A.Qq <- inla.mesh.projector(mesh=mesh.globe,loc=data.unit.sphere)$proj$A
+  A.Qq <- fmesher::fm_basis(mesh.globe,loc=data.unit.sphere)
 
   if(options$use.mean.Qq==TRUE){
     N.Qq <- 1
@@ -172,6 +174,8 @@ fit_GL_3d <- function(fitted.Qq,config){
     dfRphitheta$exc  <- dfRphitheta$R - Qq.thetaphi
     dfRphitheta.exc    <- dfRphitheta[dfRphitheta$exc > 0,] #dfRphitheta %>% dplyr::filter(exc > 0)
 
+    if (!nrow(dfRphitheta.exc)) stop("No radial exceedances for threshold draw ", i)
+
     ## To fit a point pattern on the sphere with inlabru, we need to
     ## create a SpatialPointsDataFrame and store the Cartesian coordinates
     ## (x,y,z) as "coordinates".
@@ -190,36 +194,38 @@ fit_GL_3d <- function(fitted.Qq,config){
 
     alpha <- options$alpha
     if(options$excess.dist.fam=="E"){
-      if(options$W.model=="M1"){
+      if(architecture=="shared-geometry"){
         form.W  <- coordinates  ~ Int.W + log(k) - 3*Int.G - 3* zeta
-      }else if(options$W.model=="M2"){
+      }else if(architecture=="decoupled"){
         form.W  <- coordinates  ~ Int.W + log(k) - phi
-      }else if(options$W.model=="M3"){
+      }else if(architecture=="residual-adjustment"){
         form.W  <- coordinates  ~ Int.W + log(k) - 3*Int.G - 3* zeta - phi
       }
       form.G   <- exc ~ Int.G + zeta
-      lik_G <- like("exponential", formula=form.G, data=df.data.exc)
+      lik_G <- inlabru::bru_obs(family="exponential", formula=form.G, data=df.data.exc)
     }else if(options$excess.dist.fam=="GP"){
-      if(options$W.model=="M1"){
+      if(architecture=="shared-geometry"){
         form.W  <- coordinates ~ 0 + Int.W + 3*Int.G + 3*zeta + log(k)
-      }else if(options$W.model=="M2"){
+      }else if(architecture=="decoupled"){
         form.W  <- coordinates ~ 0 + Int.W - phi + log(k)
-      }else if(options$W.model=="M3"){
+      }else if(architecture=="residual-adjustment"){
         form.W  <- coordinates ~ 0 + Int.W + 3*Int.G + 3*zeta - phi + log(k)
       }
       form.G  <- exc ~ 0 + Int.G + zeta
-      lik_G <- like("gp", formula=form.G, data=df.data.exc,
+      lik_G <- inlabru::bru_obs(family="gp", formula=form.G, data=df.data.exc,
                     control.family = list(control.link = list(quantile = alpha)))
     }
 
-    lik_W  <- like("cp", formula = form.W,
+    lik_W <- inlabru::bru_obs(family="cp", formula = form.W,
                    data = df.data.W,
                    domain = list(coordinates=mesh.globe))#,ips = fm_int(domain=mesh.globe))
 
     fit_GW <- bru(cmp, lik_W, lik_G,
-                  options = list(bru_max_iter = 1,
-                                 num.threads  = 8,
-                                 verbose      = FALSE))
+                  options = utils::modifyList(list(bru_max_iter=1,
+                    num.threads=1, verbose=FALSE), bru_options))
+    if (return_fitted_obj) fitted.mod$GL.fit.obj[[i]] <- fit_GW
+    fitted.mod$model.convention <- "manuscript-v1"
+    fitted.mod$model.name <- architecture
 
     if(config$progress){
       prog <- "Fitting done"
@@ -229,52 +235,52 @@ fit_GL_3d <- function(fitted.Qq,config){
 
     if(options$excess.dist.fam=="E"){
       # Generate intensities and g
-      if(options$W.model=="M1"){
+      if(architecture=="shared-geometry"){
         post_joint <- generate(n.samples = options$N.GW,
-                               object    = fit_GW,
+                               x         = fit_GW,
                                newdata   = mesh.globe.df, #SpatialPointsDataFrame(coords=mesh.globe.df,data=data.frame(rep(NA,nrow(mesh.globe.df)))),
                                formula   = ~list(Int.W + log(k) - 3*Int.G - 3*zeta,
                                                  exp(Int.G+zeta),
                                                  exp(-Int.G-zeta)),
-                               seed      = options$seed)
-      }else if(options$W.model=="M2"){
+                               seed      = options$seed, num.threads=1)
+      }else if(architecture=="decoupled"){
         post_joint <- generate(n.samples = options$N.GW,
-                               object    = fit_GW,
+                               x         = fit_GW,
                                newdata   = mesh.globe.df, #SpatialPointsDataFrame(coords=mesh.globe.df,data=data.frame(rep(NA,nrow(mesh.globe.df)))),
                                formula   = ~list(Int.W + log(k) - phi,
                                                  exp(Int.G+zeta),
-                                                 exp(-Int.G-zeta)),
-                               seed      = options$seed)
-      }else if(options$W.model=="M3"){
+                                                 exp(-Int.G-zeta), phi, Int.W),
+                               seed      = options$seed, num.threads=1)
+      }else if(architecture=="residual-adjustment"){
         post_joint <- generate(n.samples = options$N.GW,
-                               object    = fit_GW,
+                               x         = fit_GW,
                                newdata   = mesh.globe.df, #SpatialPointsDataFrame(coords=mesh.globe.df,data=data.frame(rep(NA,nrow(mesh.globe.df)))),
                                formula   = ~list(Int.W + log(k) - 3*Int.G - 3*zeta -phi,
                                                  exp(Int.G+zeta),
-                                                 exp(-Int.G-zeta)),
-                               seed      = options$seed)
+                                                 exp(-Int.G-zeta), phi, Int.W),
+                               seed      = options$seed, num.threads=1)
       }
     }else if(options$excess.dist.fam=="GP"){
       xi.est <- fit_GW$summary.hyperpar$mean[1]
-      if(options$W.model=="M1"){
+      if(architecture=="shared-geometry"){
         post_joint <- generate(n.samples = options$N.GW,
-                               object    = fit_GW ,
+                               x         = fit_GW ,
                                newdata   = mesh.globe.df,
                                formula   = ~list(Int.W + 3*Int.G + 3*zeta + log(k),
                                                  ((1-alpha)^(-xi.est)-1)/(xi.est*exp(Int.G+zeta)),
                                                  xi.est*exp(Int.G+zeta)/((1-alpha)^(-xi.est)-1)),
-                               seed      = options$seed)
-      }else if(options$W.model=="M2"){
+                               seed      = options$seed, num.threads=1)
+      }else if(architecture=="decoupled"){
         post_joint <- generate(n.samples = options$N.GW,
-                               object    = fit_GW ,
+                               x         = fit_GW ,
                                newdata   = mesh.globe.df,
                                formula   = ~list(Int.W - phi + log(k),
                                                  ((1-alpha)^(-xi.est)-1)/(xi.est*exp(Int.G+zeta)),
                                                  xi.est*exp(Int.G+zeta)/((1-alpha)^(-xi.est)-1)),
-                               seed      = options$seed)
-      }else if(options$W.model=="M3"){
+                               seed      = options$seed, num.threads=1)
+      }else if(architecture=="residual-adjustment"){
         post_joint <- generate(n.samples = options$N.GW,
-                               object    = fit_GW ,
+                               x         = fit_GW ,
                                newdata   = mesh.globe.df,
                                formula   = ~list(Int.W + 3*Int.G + 3*zeta - phi + log(k),
                                                  ((1-alpha)^(-xi.est)-1)/(xi.est*exp(Int.G+zeta)),
@@ -282,7 +288,7 @@ fit_GL_3d <- function(fitted.Qq,config){
                                                  phi,
                                                  Int.W,
                                                  log(k)),
-                               seed      = options$seed)
+                               seed      = options$seed, num.threads=1)
         fitted.mod$phi[[i]]         <- lapply(post_joint,function(xx) xx[[4]])
         fitted.mod$Int.W[[i]]         <- lapply(post_joint,function(xx) xx[[5]])
         fitted.mod$log.k[[i]]         <- lapply(post_joint,function(xx) xx[[6]])
@@ -304,6 +310,16 @@ fit_GL_3d <- function(fitted.Qq,config){
     #   fitted.mod$g[[i]][[j]] <- as.vector(A %*% post_joint[[j]][[2]])
     # }
     #
+    if (options$excess.dist.fam == "E") {
+      if (architecture != "shared-geometry") {
+        fitted.mod$phi[[i]] <- lapply(post_joint, function(xx) xx[[4]])
+        fitted.mod$Int.W[[i]] <- lapply(post_joint, function(xx) xx[[5]])
+      } else {
+        fitted.mod$Int.W[[i]] <- lapply(post_joint, function(xx)
+          xx[[1]] + 3*log(xx[[2]]) - log(k))
+      }
+      fitted.mod$log.k[[i]] <- lapply(post_joint, function(xx) log(k))
+    }
     fitted.mod$log.L[[i]] <- lapply(post_joint,function(xx) xx[[1]])
     fitted.mod$g[[i]]         <- lapply(post_joint,function(xx) xx[[2]])
     fitted.mod$G[[i]]         <- lapply(post_joint,function(xx) xx[[3]])
@@ -329,10 +345,10 @@ sample_LGCP_fix_3d <- function(n,log.L,fitted.mod){
 
 #' Title
 #'
-#' @param fitted.mod
-#' @param N.w
+#' @param fitted.mod Fitted model returned by fit_GL.
+#' @param N.w Number of directions sampled per posterior draw.
 #'
-#' @return
+#' @return A nested list of sampled directions and radial quantities.
 #' @export
 #'
 #' @examples
@@ -433,13 +449,13 @@ return_set_3d <- function(fitted.mod,alpha=0.05,conf="sim",t){
 
 #' Title
 #'
-#' @param fitted.mod
-#' @param alpha
-#' @param conf
-#' @param t
-#' @param n.MC.samp Number of integrating directions if set = "isotropic".
+#' @param fitted.mod Fitted model returned by fit_GL.
+#' @param alpha Tail probability for credible bands.
+#' @param conf Interval type, "sim" or "marg".
+#' @param t Return period.
+#' @param n.MC.samp Number of Monte Carlo integration directions.
 #'
-#' @return
+#' @return A list of posterior isotropic return-set summaries.
 #' @export
 #'
 #' @examples
@@ -812,9 +828,9 @@ get_rinfsup_3d <- function(w,x,y,z){
 
 #' Title
 #'
-#' @param fitted.mod
+#' @param fitted.mod Fitted model returned by fit_GL.
 #'
-#' @return
+#' @return A nested list of transformed point-pattern matrices.
 #' @export
 #'
 #' @examples

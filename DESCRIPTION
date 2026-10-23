@@ -1,6 +1,6 @@
 Package: geometricExtremes
 Title: Geometric Inference for Multivariate Extreme Value Theory
-Version: 0.0.0.9000
+Version: 0.0.0.9001
 Maintainer: Lambert De Monte <l.demonte@ed.ac.uk>
 Authors@R: 
     c(person(given ="Lambert", 
@@ -17,8 +17,11 @@ Authors@R:
              role = c("aut")))
 Description: A Bayesian approach to geometric extreme value analysis based on: Papastathopoulos, I., De Monte, L., Campbell, R. and Rue, L. (2023) 'Statistical inference for radially-stable generalized Pareto distributions and return level-sets in geometric extremes', arXiv preprint.
 License: MIT + file LICENSE
+Additional_repositories: https://inla.r-inla-download.org/R/stable
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
 Imports:
-    INLA, inlabru, pracma, excursions, rmutil, stats, rgl, sp, evd, mvtnorm
+    INLA, inlabru, fmesher, Matrix, pracma, excursions, rmutil, stats, rgl, sp, evd, mvtnorm
+Suggests: testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.1

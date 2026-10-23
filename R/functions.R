@@ -2,7 +2,7 @@
 #'
 #' @param X n by d observations matrix.
 #' @param excess.dist.fam Exponential ("E") or generalised Pareto ("GP") excesses.
-#' @param W.model "M1", "M2", or "M3", as indicated in Papastathopoulos et al. (2023).
+#' @param W.model Directional model: "M1" decoupled (L=B), "M2" shared-geometry (L=G), or "M3" residual-adjustment (L=BG). Before version 0.0.0.9001, M1 and M2 had the opposite meanings.
 #' @param W.data Angles to include in likelihood: all angles ("AllW") or only those of exceedances of Q_q ("ExcOnly").
 #' @param use.mean.Qq Boolean: use mean of Qq to fit G and L if TRUE, use samples from Qq otherwise.
 #' @param q Quantile of the quantile set Q_q to fit.
@@ -43,7 +43,7 @@
 #'                        mesh.res.3d      = 20,
 #'                        seed             = 0L)
 set.options <- function(X,excess.dist.fam,W.model,W.data,
-                        use.mean.Qq,q,alpha,N.Qq,N.GW,beta,
+                        use.mean.Qq,q,alpha,N.Qq,N.GW,
                         QR.prior.range = c(1, 0.999),QR.prior.sigma   = c(1, 0.8),
                         zeta.prior.range = c(0.5, 0.999),zeta.prior.sigma = c(5, 0.8),
                         phi.prior.range  = c(0.5, 0.999),phi.prior.sigma  = c(5, 0.8),
@@ -68,7 +68,7 @@ set.options <- function(X,excess.dist.fam,W.model,W.data,
   }
 
   if(missing(W.model)){
-    stop("Specify value of W.data: 'M1', 'M2' or 'M3'.")
+    stop("Specify value of W.model: 'M1', 'M2' or 'M3'.")
   }else if(!(W.model %in% c("M1","M2","M3"))){
     stop("Choose model for angles from: 'M1', 'M2', 'M3'")
   }
@@ -288,7 +288,6 @@ toLaplaceMargins <- function(X,q){
 #' @param X.L n by d matrix of observations in Laplace margins, same dimensions as LapTransf$X.
 #' @param LapTransf Object returned by the function toLaplaceMargins.
 #'
-#' @import rmutil
 #' @import evd
 #' @return An n by d matrix of observations in original marginal distributions.
 #' @export
@@ -375,12 +374,7 @@ toOriginalMargins <- function(X.L,LapTransf){
 #'
 #' @examples
 select_beta <- function(X,q,beta.seq,config){
-  if(ncol(X)==2){
-    post_beta <- select_beta_2d(X,options,config,return_fitted_obj=return_fitted_obj)
-  }else{
-    return("Not yet implemented for d>2.")
-  }
-  post_beta
+  stop("select_beta() is not implemented in this package version.")
 }
 
 #' Obtain realisations from the posterior distribution of the quantile set Q_q
@@ -411,15 +405,27 @@ fit_Qq <- function(X,options,config,return_fitted_obj=FALSE){
 #' @param fitted.Qq Object returned by the function fit_Qq.
 #' @param config Object returned by the function set.configs.
 #'
-#' @return A list of posterior realisations of G and L and other useful parameters.
+#' @param return_fitted_obj Retain each fitted inlabru object in GL.fit.obj.
+#' @param bru_options Named list overriding tail-fit inlabru options. Defaults use one thread for reproducibility.
+#' @details M1 and M3 constrain the finite-element surface integral of phi to zero,
+#' leaving Int.W free. Here phi=-d*log(r_B), so phi.prior.sigma is on the phi
+#' scale, not the log-radial scale. The intercept retains the INLA fixed-effect
+#' prior; use bru_options to examine prior sensitivity. Historical saved fits
+#' must be interpreted with their original model-label convention.
+#' @return Posterior draws, model.name and model.convention. log.L contains
+#' unnormalised log-intensities, not normalised directional densities.
 #' @export
 #'
 #' @examples
-fit_GL <- function(fitted.Qq,config){
+fit_GL <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list()){
+  directional_architecture(fitted.Qq$options$W.model)
+  if (!is.list(bru_options)) stop("bru_options must be a list.")
+  if (any(!is.finite(fitted.Qq$X)) || any(rowSums(fitted.Qq$X^2)==0))
+    stop("X must be finite and contain no zero vectors.")
   if(ncol(fitted.Qq$X)==2){
-    fitted.mod <- fit_GL_2d(fitted.Qq,config)
+    fitted.mod <- fit_GL_2d(fitted.Qq,config,return_fitted_obj,bru_options)
   }else if(ncol(fitted.Qq$X)==3){
-    fitted.mod <- fit_GL_3d(fitted.Qq,config)
+    fitted.mod <- fit_GL_3d(fitted.Qq,config,return_fitted_obj,bru_options)
   }else{
     return("X must be an n by p matrix, with p in {2,3}")
   }
@@ -485,8 +491,8 @@ prob_estimation <- function(fitted.mod,post.sample,x_B,y_B){
 #' @param set Type of quantile set, either "classic" or "isotropic".
 #' @param alpha Value in (0,1) for the (1-alpha)-simultaneous predictive interval of X_t.
 #' @param conf Choose between simultaneous ("sim") and marginal ("marg") predictive intervals.
-#' @param t Vector of return periods t.prime <= 1/(1-q) for the return level-sets X_{t.prime}.
-#' @param q.prime Vector of probabilities of the canonical return level-set level-sets X_{1/(1-q.prime)}.
+#' @param t Vector of return periods for the requested return sets.
+#' @param q.prime Vector of probability levels for the canonical return sets.
 #' @param include.Qq Boolean: Include Q_q in the return sets if TRUE, do not include otherwise.
 #' @param LapTransf Object returned by the function toLaplaceMargins. If provided, return sets will be plotted in original margins.
 #' @param n.MC.samp Number of integrating directions if set = "isotropic".
@@ -562,7 +568,7 @@ return_set <- function(fitted.mod,set="classic",alpha=0.05,conf="sim",t=NA,q.pri
 #'
 #' @param fitted.mod Object returned from the function fit_GL.
 #'
-#' @return Matrix of posterior samples from alpha_{2|1} and alpha_{2|1}
+#' @return Matrix of posterior samples for the two conditional-extremes parameters.
 #' @export
 #'
 #' @examples
@@ -718,7 +724,7 @@ plot_X_t <- function(fitted.mod,list_ret_sets,plt = "boundary",surface3d="mean",
 #' Obtain the volume of a hypersphere
 #'
 #' @param r radius of the sphere.
-#' @param d dimension of the hypersphere S^{d-1}.
+#' @param d Dimension of the hypersphere, \eqn{S^{d-1}}.
 #'
 #' @return volume of the hypersphere.
 #' @export
@@ -733,13 +739,11 @@ hypersphere_volume <- function(r, d){
 #' @param X matrix of observations inside the unit ball B_1(0).
 #' @param s sequence of radii for the empirical K function to be estimated.
 #'
-#' @import mvtnorm
 #' @return K function value for different radii values.
 #' @export
 #'
 #' @examples
 Khat_B <- function(X, s=seq(0, 2, len=30)){
-  require(mvtnorm)
   ## Monte carlo sample
   ## Computation of K function
   d <- ncol(X)
@@ -768,13 +772,11 @@ Khat_B <- function(X, s=seq(0, 2, len=30)){
 #' @param W matrix of observations on S^(d-1).
 #' @param phi sequence of angles of the spherical cone for the empirical K function to be estimated.
 #'
-#' @import mvtnorm
 #' @return K function value for different angular values.
 #' @export
 #'
 #' @examples
 Khat_W <- function(W, phi=seq(0, pi, len=30)){
-  require(mvtnorm)
   ## Monte carlo sample
   ## Computation of K function
   s <- sqrt(2 - 2*cos(phi))
@@ -795,20 +797,18 @@ Khat_W <- function(W, phi=seq(0, pi, len=30)){
 #' Compute the (1-sig)% simultaneous envelope for the K function
 #'
 #' @param n number of samples inside the unit hypersphere.
-#' @param d dimension of the hypersphere S^{d-1}.
+#' @param d Dimension of the hypersphere, \eqn{S^{d-1}}.
 #' @param subset geometry of the subset on which to count sets, "ball" or "sph cone".
-#' @param M number of montecarlo samples from a uniform sample on S^{d-1}.
+#' @param M Number of Monte Carlo samples from the uniform law on \eqn{S^{d-1}}.
 #' @param sig credibility level for the envelope.
 #' @param s sequence of radii for the empirical K function to be estimated (if subset=="ball").
 #' @param phi sequence of angles for the empirical K function to be estimated (if subset=="sph cone").
 #'
-#' @import mvtnorm
 #' @return (1-sig)% simultaneous envelope for the K function.
 #' @export
 #'
 #' @examples
 K_envelope <- function(n, d, subset, M = 500, sig=.95,s=seq(0, 2, len=30),phi=seq(0, pi, len=30)){
-  require(mvtnorm)
 
   if(subset=="ball"){
     K.mc <- matrix(nrow=M, ncol=length(s))
@@ -818,7 +818,7 @@ K_envelope <- function(n, d, subset, M = 500, sig=.95,s=seq(0, 2, len=30),phi=se
 
   for(i in 1:M){
     message("Envelope:", toString(i))
-    U     <- rmvnorm(n=n, rep(0, d), sigma = diag(1, d))
+    U <- mvtnorm::rmvnorm(n=n, rep(0,d), sigma=diag(1,d))
     if(subset=="ball"){
       R.tmp <- apply(U, 1, function(x) sqrt(sum(x^2)))
       W   <- t(sapply(1:nrow(U), function(i) U[i,]/R.tmp[i]))
@@ -918,10 +918,10 @@ X_to_uniform_on_Ball <- function(fitted.mod){
 #' @examples
 thin_U_on_ball <- function(U_on_Ball){
 
-  n.min <- nrow(U_on_ball[[1]][[1]])
-  for(i in 1:length(U_on_ball)){
-    for(j in 1:length(U_on_ball[[1]])){
-      n.ij <- nrow(U_on_ball[[i]][[j]])
+  n.min <- nrow(U_on_Ball[[1]][[1]])
+  for(i in 1:length(U_on_Ball)){
+    for(j in 1:length(U_on_Ball[[1]])){
+      n.ij <- nrow(U_on_Ball[[i]][[j]])
       if(n.ij < n.min){
         n.min <- n.ij
       }

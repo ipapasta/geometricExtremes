@@ -1,5 +1,9 @@
 # Examples of $`\texttt{geometricExtremes}`$ functionalities
 
+Model labels follow the manuscript: **M1 decoupled**, **M2 shared-geometry**,
+**M3 residual-adjustment**. Older package versions reversed M1 and M2;
+see the migration note in README.md. The M3 selections below are unchanged.
+
 This file contains example-code to run the main functions of the $`\texttt{geometricExtremes}`$ package. 
 As of now, the functions are available for 2- and 3-dimensional modelling,
 with examples respectively in Sections [Examples 2D](#2d) and [Examples 3D](#3d).
@@ -53,7 +57,7 @@ options <- set.options(X                = LapTransf$X.L,
                        excess.dist.fam  = "E",
                        W.data           = "ExcOnly",
                        W.model          = "M3",
-		       use.mean.Qq      = FALSE
+		       use.mean.Qq      = FALSE,
                        q                = 0.9, 
                        N.Qq             = 20,
                        N.GW             = 50,

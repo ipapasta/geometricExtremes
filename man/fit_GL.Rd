@@ -4,16 +4,28 @@
 \alias{fit_GL}
 \title{Obtain realisations from the posterior distribution of the sets G and L}
 \usage{
-fit_GL(fitted.Qq, config)
+fit_GL(fitted.Qq, config, return_fitted_obj = FALSE, bru_options = list())
 }
 \arguments{
 \item{fitted.Qq}{Object returned by the function fit_Qq.}
 
 \item{config}{Object returned by the function set.configs.}
+
+\item{return_fitted_obj}{Retain each fitted inlabru object in GL.fit.obj.}
+
+\item{bru_options}{Named list overriding tail-fit inlabru options. Defaults use one thread for reproducibility.}
 }
 \value{
-A list of posterior realisations of G and L and other useful parameters.
+Posterior draws, model.name and model.convention. log.L contains
+unnormalised log-intensities, not normalised directional densities.
 }
 \description{
 Obtain realisations from the posterior distribution of the sets G and L
+}
+\details{
+M1 and M3 constrain the finite-element surface integral of phi to zero,
+leaving Int.W free. Here phi=-d*log(r_B), so phi.prior.sigma is on the phi
+scale, not the log-radial scale. The intercept retains the INLA fixed-effect
+prior; use bru_options to examine prior sensitivity. Historical saved fits
+must be interpreted with their original model-label convention.
 }

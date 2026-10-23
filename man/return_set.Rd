@@ -25,9 +25,9 @@ return_set(
 
 \item{conf}{Choose between simultaneous ("sim") and marginal ("marg") predictive intervals.}
 
-\item{t}{Vector of return periods t.prime <= 1/(1-q) for the return level-sets X_{t.prime}.}
+\item{t}{Vector of return periods for the requested return sets.}
 
-\item{q.prime}{Vector of probabilities of the canonical return level-set level-sets X_{1/(1-q.prime)}.}
+\item{q.prime}{Vector of probability levels for the canonical return sets.}
 
 \item{include.Qq}{Boolean: Include Q_q in the return sets if TRUE, do not include otherwise.}
 

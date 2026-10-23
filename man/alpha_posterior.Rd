@@ -10,7 +10,7 @@ alpha_posterior(fitted.mod)
 \item{fitted.mod}{Object returned from the function fit_GL.}
 }
 \value{
-Matrix of posterior samples from alpha_{2|1} and alpha_{2|1}
+Matrix of posterior samples for the two conditional-extremes parameters.
 }
 \description{
 Obtain posterior samples from the conditional extremes alpha parameter
