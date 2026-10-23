@@ -12,9 +12,7 @@
 
 - In M1 and M3, the residual directional field is identified by the
   surface-weighted finite-element constraint
-  $$
-  \int_{\mathbb S^{d-1}}\phi(\bm w)\,d\bm w=0.
-  $$
+  $\int_{\mathbb S^{d-1}}\phi(\bm w)\,d\bm w=0.$
   while the auxiliary Poisson intercept `Int.W` remains unconstrained. The
   constraint uses finite-element integration weights on the circle for $d=2$
   and on the sphere for $d=3$.
@@ -41,9 +39,9 @@
 
 - Added GP threshold stability and finite-support handling for negative
   $\xi$. Calculations enforce
-  $$
+  $
   1+\xi\{r-r_{\mathcal Q_q}(\bm w)\}/r_{\Sigma}(\bm w)>0.
-  $$
+  $
   and do not silently clip observations or posterior draws at the finite radial
   endpoint.
 
