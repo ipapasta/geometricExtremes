@@ -6,6 +6,59 @@ directional_architecture <- function(model) {
   unname(labels[[model]])
 }
 
+# Identify the two GP likelihood implementations. "EGP" is experimental and
+# fixes the extended-GP body-shape parameter kappa at one.
+is_gp_excess_family <- function(family) {
+  identical(family, "GP") || identical(family, "EGP")
+}
+
+# Stable conversion from the fitted alpha-quantile to the GP scale:
+# sigma = q_alpha * xi / {(1-alpha)^(-xi)-1}. The direct expression is 0/0
+# at xi=0 and loses precision near zero.
+gp_quantile_to_scale <- function(q_alpha, xi, alpha) {
+  if (length(xi) != 1L || !is.finite(xi) || length(alpha) != 1L ||
+      !is.finite(alpha) || alpha <= 0 || alpha >= 1)
+    stop("xi must be finite and alpha must lie in (0,1).")
+  q_alpha <- as.numeric(q_alpha)
+  if (any(!is.finite(q_alpha)) || any(q_alpha <= 0))
+    stop("GP quantiles must be finite and positive.")
+  a <- -log1p(-alpha)
+  factor <- if (abs(xi) < 1e-8) {
+    # xi/expm1(a*xi) = 1/a - xi/2 + a*xi^2/12 + O(xi^4)
+    1/a - xi/2 + a*xi^2/12
+  } else {
+    xi/expm1(a*xi)
+  }
+  q_alpha * factor
+}
+
+# Extract xi by semantic name. This remains correct for EGP fits even if other
+# hyperparameters are present or INLA changes their ordering.
+extract_gp_tail <- function(fit) {
+  tab <- fit$summary.hyperpar
+  if (is.null(tab) || !nrow(tab)) stop("The fitted model has no GP tail summary.")
+  idx <- grep("^Tail parameter for (the )?(e)?gp observations(\\[[0-9]+\\])?$",
+              rownames(tab), ignore.case=TRUE)
+  if (length(idx) != 1L)
+    stop("Could not uniquely identify the GP tail parameter in the INLA fit.")
+  list(mean=unname(tab[idx,"mean"]), summary=tab[idx,,drop=FALSE],
+       marginal=fit$marginals.hyperpar[[rownames(tab)[idx]]])
+}
+
+# INLA control for the experimental signed-GP likelihood. EGP with kappa=1 is
+# exactly GP, while permitting xi below zero.
+egp_kappa1_control <- function(alpha, interval, prior_rate) {
+  tail <- INLA::inla.models()$likelihood$egp$hyper$theta1
+  list(
+    control.link=list(model="quantile", quantile=alpha),
+    hyper=list(
+      tail=list(initial=tail$to.theta(0, interval=interval), fixed=FALSE,
+                prior="pc.egptail", param=c(prior_rate, interval)),
+      shape=list(initial=0, fixed=TRUE)
+    )
+  )
+}
+
 # Surface weights for the piecewise-linear finite-element basis.
 fem_surface_weights <- function(mesh) {
   as.numeric(Matrix::colSums(fmesher::fm_fem(mesh, order=1)$c0))

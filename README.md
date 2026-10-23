@@ -14,31 +14,13 @@
 remotes::install_github("ipapasta/geometricExtremes")
 ```
 
-## Directional models and migration
+## Recent updates
 
-From version 0.0.0.9001, model labels follow the revised manuscript:
+- Directional models follow the manuscript convention: **M1 decoupled**, **M2 shared-geometry**, and **M3 residual-adjustment**.
+- `excess.dist.fam = "EGP"` fits a signed-shape GP model using INLA's EGP likelihood with `kappa = 1`.
+- Two-dimensional radial scale-set plots now use a common geometric layout.
 
-| Label | Name | Directional body |
-|---|---|---|
-| M1 | decoupled | L = B |
-| M2 | shared-geometry | L = G |
-| M3 | residual-adjustment | L = BG |
-
-**Breaking label change:** older package versions used M1 for shared geometry
-and M2 for the decoupled model. Swap M1/M2 when reproducing old analyses;
-M3 is unchanged. Do not reinterpret historical saved objects or filenames.
-New tail fits record `model.convention = "manuscript-v1"` and `model.name`.
-
-M1 and M3 constrain the finite-element surface integral of `phi` to zero,
-while estimating `Int.W` freely. The implementation uses `phi = -d*log(r_B)`;
-`phi.prior.sigma` describes the phi scale, not the log-radial scale. Existing
-prior hyperparameters are retained. Constraints change the prior and may change
-posterior uncertainty; they do not by themselves guarantee calibrated intervals.
-
-Use `fit_GL(..., return_fitted_obj=TRUE, bru_options=list(...))` to retain the
-underlying fits and investigate solver/prior sensitivity. Tail fitting and
-posterior sampling default to one thread. `log.L` contains unnormalised
-log-intensities, not normalised directional densities.
+See [NEWS.md](NEWS.md) for details.
 
 ## Examples
 

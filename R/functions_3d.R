@@ -129,13 +129,20 @@ fit_GL_3d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(
 
   fitted.mod <- list(X         = X,
                      mesh      = mesh.globe,
-                     options    = options,
-                     Qq      = fitted.Qq$Qq,
-                     Qq.mean  = fitted.Qq$Qq.mean,
+                     options   = options,
+                     Qq        = fitted.Qq$Qq,
+                     Qq.mean   = fitted.Qq$Qq.mean,
                      prop.exc  = fitted.Qq$prop.exc,
-                     log.L = list(),
+                     log.L     = list(),
                      g         = list(),
-                     G         = list())
+                     G         = list(),
+                     xi        = list(),
+                     xi.summary = list(),
+                     xi.marginal = list(),
+                     kappa     = list(),
+                     phi       = list(),
+                     Int.W     = list(),
+                     log.k     = list())
 
   spherical.spde.zeta  <- inla.spde2.pcmatern(mesh.globe,
                                               prior.range = options$zeta.prior.range,
@@ -203,7 +210,7 @@ fit_GL_3d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(
       }
       form.G   <- exc ~ Int.G + zeta
       lik_G <- inlabru::bru_obs(family="exponential", formula=form.G, data=df.data.exc)
-    }else if(options$excess.dist.fam=="GP"){
+    }else if(is_gp_excess_family(options$excess.dist.fam)){
       if(architecture=="shared-geometry"){
         form.W  <- coordinates ~ 0 + Int.W + 3*Int.G + 3*zeta + log(k)
       }else if(architecture=="decoupled"){
@@ -212,8 +219,16 @@ fit_GL_3d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(
         form.W  <- coordinates ~ 0 + Int.W + 3*Int.G + 3*zeta - phi + log(k)
       }
       form.G  <- exc ~ 0 + Int.G + zeta
-      lik_G <- inlabru::bru_obs(family="gp", formula=form.G, data=df.data.exc,
-                    control.family = list(control.link = list(quantile = alpha)))
+      if(options$excess.dist.fam=="GP"){
+        lik_G <- inlabru::bru_obs(family="gp", formula=form.G,
+          data=df.data.exc,
+          control.family=list(control.link=list(quantile=alpha)))
+      }else{
+        lik_G <- inlabru::bru_obs(family="egp", formula=form.G,
+          data=df.data.exc,
+          control.family=egp_kappa1_control(alpha, options$egp.xi.interval,
+                                            options$egp.prior.rate))
+      }
     }
 
     lik_W <- inlabru::bru_obs(family="cp", formula = form.W,
@@ -260,31 +275,34 @@ fit_GL_3d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(
                                                  exp(-Int.G-zeta), phi, Int.W),
                                seed      = options$seed, num.threads=1)
       }
-    }else if(options$excess.dist.fam=="GP"){
-      xi.est <- fit_GW$summary.hyperpar$mean[1]
+    }else if(is_gp_excess_family(options$excess.dist.fam)){
+      xi.fit <- extract_gp_tail(fit_GW)
+      xi.est <- xi.fit$mean
+      scale.factor <- gp_quantile_to_scale(1,xi.est,alpha)
+      inverse.scale.factor <- 1/scale.factor
       if(architecture=="shared-geometry"){
         post_joint <- generate(n.samples = options$N.GW,
                                x         = fit_GW ,
                                newdata   = mesh.globe.df,
                                formula   = ~list(Int.W + 3*Int.G + 3*zeta + log(k),
-                                                 ((1-alpha)^(-xi.est)-1)/(xi.est*exp(Int.G+zeta)),
-                                                 xi.est*exp(Int.G+zeta)/((1-alpha)^(-xi.est)-1)),
+                                                 inverse.scale.factor/exp(Int.G+zeta),
+                                                 scale.factor*exp(Int.G+zeta)),
                                seed      = options$seed, num.threads=1)
       }else if(architecture=="decoupled"){
         post_joint <- generate(n.samples = options$N.GW,
                                x         = fit_GW ,
                                newdata   = mesh.globe.df,
                                formula   = ~list(Int.W - phi + log(k),
-                                                 ((1-alpha)^(-xi.est)-1)/(xi.est*exp(Int.G+zeta)),
-                                                 xi.est*exp(Int.G+zeta)/((1-alpha)^(-xi.est)-1)),
+                                                 inverse.scale.factor/exp(Int.G+zeta),
+                                                 scale.factor*exp(Int.G+zeta)),
                                seed      = options$seed, num.threads=1)
       }else if(architecture=="residual-adjustment"){
         post_joint <- generate(n.samples = options$N.GW,
                                x         = fit_GW ,
                                newdata   = mesh.globe.df,
                                formula   = ~list(Int.W + 3*Int.G + 3*zeta - phi + log(k),
-                                                 ((1-alpha)^(-xi.est)-1)/(xi.est*exp(Int.G+zeta)),
-                                                 xi.est*exp(Int.G+zeta)/((1-alpha)^(-xi.est)-1),
+                                                 inverse.scale.factor/exp(Int.G+zeta),
+                                                 scale.factor*exp(Int.G+zeta),
                                                  phi,
                                                  Int.W,
                                                  log(k)),
@@ -319,10 +337,15 @@ fit_GL_3d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(
           xx[[1]] + 3*log(xx[[2]]) - log(k))
       }
       fitted.mod$log.k[[i]] <- lapply(post_joint, function(xx) log(k))
+    } else {
+      fitted.mod$xi[[i]] <- xi.est
+      fitted.mod$xi.summary[[i]] <- xi.fit$summary
+      fitted.mod$xi.marginal[[i]] <- xi.fit$marginal
+      fitted.mod$kappa[[i]] <- 1
     }
     fitted.mod$log.L[[i]] <- lapply(post_joint,function(xx) xx[[1]])
-    fitted.mod$g[[i]]         <- lapply(post_joint,function(xx) xx[[2]])
-    fitted.mod$G[[i]]         <- lapply(post_joint,function(xx) xx[[3]])
+    fitted.mod$g[[i]]     <- lapply(post_joint,function(xx) xx[[2]])
+    fitted.mod$G[[i]]     <- lapply(post_joint,function(xx) xx[[3]])
 
     if(config$save){
       filenm <- paste0(config$file.nm,".RData")
@@ -460,6 +483,8 @@ return_set_3d <- function(fitted.mod,alpha=0.05,conf="sim",t){
 #'
 #' @examples
 return_set_3d_isotropic <- function(fitted.mod,alpha=0.05,conf="sim",t,n.MC.samp=10000){
+  if(is_gp_excess_family(fitted.mod$options$excess.dist.fam))
+    stop("Isotropic return sets are currently implemented only for excess.dist.fam='E'.")
   ret_set_list <- list(pars=list(t=t,
                                  marginals = "Laplace"),
                        X=fitted.mod$X)
@@ -835,6 +860,8 @@ get_rinfsup_3d <- function(w,x,y,z){
 #'
 #' @examples
 X_to_uniform_on_Ball_3d <- function(fitted.mod){
+  if(is_gp_excess_family(fitted.mod$options$excess.dist.fam))
+    stop("The uniform-ball diagnostic is currently implemented only for excess.dist.fam='E'.")
 
   get_integrating_constant_3d <- function(mesh,log.f,n.MC.samp){
     Us <- t(apply(matrix(rnorm(3*n.MC.samp),ncol=3),1,function(x) x/sqrt(sum(x^2))))

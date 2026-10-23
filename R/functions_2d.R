@@ -134,6 +134,9 @@ fit_GL_2d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(
                        prop.exc = fitted.Qq$prop.exc,
                        G        = list(),
                        xi       = list(),
+                       xi.summary = list(),
+                       xi.marginal = list(),
+                       kappa    = list(),
                        log.L    = list(),
                        phi      = list(),
                        Int.W    = list(),
@@ -202,7 +205,7 @@ fit_GL_2d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(
       }
       form.G <- excess.gamma ~ 0 + Int.G + zeta
       lik_G <- inlabru::bru_obs(family="exponential", formula=form.G, data=dfRW.exc.only)
-    }else if(options$excess.dist.fam=="GP"){
+    }else if(is_gp_excess_family(options$excess.dist.fam)){
       if(architecture=="shared-geometry"){
         form.W  <- W ~ 0 + Int.W + 2*Int.G + 2*zeta + log.k
       }else if(architecture=="decoupled"){
@@ -211,8 +214,16 @@ fit_GL_2d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(
         form.W  <- W ~ 0 + Int.W + 2*Int.G + 2*zeta - phi + log.k
       }
       form.G  <- excess.gamma ~ 0 + Int.G + zeta
-      lik_G <- inlabru::bru_obs(family="gp", formula=form.G, data=dfRW.exc.only,
-                    control.family = list(control.link = list(quantile = alpha)))
+      if(options$excess.dist.fam=="GP"){
+        lik_G <- inlabru::bru_obs(family="gp", formula=form.G,
+          data=dfRW.exc.only,
+          control.family=list(control.link=list(quantile=alpha)))
+      }else{
+        lik_G <- inlabru::bru_obs(family="egp", formula=form.G,
+          data=dfRW.exc.only,
+          control.family=egp_kappa1_control(alpha, options$egp.xi.interval,
+                                            options$egp.prior.rate))
+      }
     }
 
 
@@ -279,28 +290,30 @@ fit_GL_2d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(
       fitted.mod$log.L[[i]] <- lapply(post_joint,function(xx) xx[[1]])
       fitted.mod$g[[i]]         <- lapply(post_joint,function(xx) xx[[2]])
       fitted.mod$G[[i]]   <- lapply(post_joint,function(xx) xx[[3]])
-    }else if(options$excess.dist.fam=="GP"){
-      xi.est <- fit_GW$summary.hyperpar$mean[1]
+    }else if(is_gp_excess_family(options$excess.dist.fam)){
+      xi.fit <- extract_gp_tail(fit_GW)
+      xi.est <- xi.fit$mean
+      scale.factor <- gp_quantile_to_scale(1,xi.est,alpha)
       if(architecture=="shared-geometry"){
         post_joint <- generate(n.samples = options$N.GW,
                                x         = fit_GW ,
                                newdata   = data.frame(W=mesh$loc),
                                formula   = ~list(Int.W + 2*Int.G + 2*zeta + log.k,
-                                                 xi.est*exp(Int.G+zeta)/((1-alpha)^(-xi.est)-1)),
+                                                 scale.factor*exp(Int.G+zeta)),
                                seed      = options$seed, num.threads=1)
       }else if(architecture=="decoupled"){
         post_joint <- generate(n.samples = options$N.GW,
                                x         = fit_GW ,
                                newdata   = data.frame(W=mesh$loc),
                                formula   = ~list(Int.W - phi + log.k,
-                                                 xi.est*exp(Int.G+zeta)/((1-alpha)^(-xi.est)-1)),
+                                                 scale.factor*exp(Int.G+zeta)),
                                seed      = options$seed, num.threads=1)
       }else if(architecture=="residual-adjustment"){
         post_joint <- generate(n.samples = options$N.GW,
                                x         = fit_GW ,
                                newdata   = data.frame(W=mesh$loc),
                                formula   = ~list(Int.W + 2*Int.G + 2*zeta - phi + log.k,
-                                                 xi.est*exp(Int.G+zeta)/((1-alpha)^(-xi.est)-1),
+                                                 scale.factor*exp(Int.G+zeta),
                                                  phi,
                                                  Int.W,
                                                  log.k),
@@ -310,9 +323,12 @@ fit_GL_2d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(
         fitted.mod$log.k[[i]]         <- lapply(post_joint,function(xx) xx[[5]])
       }
 
-      fitted.mod$log.L[[i]] <- lapply(post_joint,function(xx) xx[[1]])
-      fitted.mod$G[[i]]     <- lapply(post_joint,function(xx) xx[[2]])
-      fitted.mod$xi[[i]]    <- xi.est
+      fitted.mod$log.L[[i]]   <- lapply(post_joint,function(xx) xx[[1]])
+      fitted.mod$G[[i]]       <- lapply(post_joint,function(xx) xx[[2]])
+      fitted.mod$xi[[i]]      <- xi.est
+      fitted.mod$xi.summary[[i]] <- xi.fit$summary
+      fitted.mod$xi.marginal[[i]] <- xi.fit$marginal
+      fitted.mod$kappa[[i]]   <- 1
     }
 
     if(config$save){
@@ -860,6 +876,8 @@ return_set_2d <- function(fitted.mod,alpha=0.05,t,conf="sim",include.Qq=FALSE){
 #'
 #' @examples
 return_set_2d_isotropic <- function(fitted.mod,alpha=0.05,conf="sim",t,n.MC.samp=10000){
+  if(is_gp_excess_family(fitted.mod$options$excess.dist.fam))
+    stop("Isotropic return sets are currently implemented only for excess.dist.fam='E'.")
   ret_set_list <- list(pars=list(t=t,
                                  marginals = "Laplace"),
                        X=fitted.mod$X)
@@ -1182,7 +1200,10 @@ plot_Qq_2d <- function(fitted.Qq,alpha,conf="sim",cex.pts=0.4,cex.axis=1.4,xlim=
 #' @noRd
 #'
 #' @examples
-plot_G_2d <- function(fitted.mod,alpha,conf="sim",mean_med="mean",cex.txt=1.4,cex.pts=0.6,transf.G = F,cex.axis=1.4,by=2){
+plot_G_2d <- function(fitted.mod,alpha,conf="sim",mean_med="mean",
+                      cex.txt=1.4,cex.pts=0.6,transf.G=FALSE,
+                      xlim=c(0,0),ylim=c(0,0),data.scale=NULL,
+                      show.reference.box=TRUE){
   if(transf.G==T){
     G <- fitted.mod$G_T
   }else{
@@ -1212,52 +1233,44 @@ plot_G_2d <- function(fitted.mod,alpha,conf="sim",mean_med="mean",cex.txt=1.4,ce
     upp <- pol2cart(cbind(fitted.mod$mesh$loc,excurs$b.marg))
   }
 
-  if(fitted.mod$options$excess.dist.fam=="E"){
-    plot(fitted.mod$X/log(nrow(fitted.mod$X)/2),col="grey35",
-         xlim=c(-1.3,1.3),ylim=c(-1.3,1.3),pch=16,cex=cex.pts,
-         cex.lab=1.6,cex.axis=1.2,xaxt='n',yaxt='n',bty="n",xlab="",ylab="")
+  if (!mean_med %in% c("mean","median"))
+    stop("mean_med must be 'mean' or 'median'.")
+  if (!conf %in% c("sim","marg")) stop("conf must be 'sim' or 'marg'.")
+  if (is.null(data.scale)) data.scale <- log(nrow(fitted.mod$X)/2)
+  if (length(data.scale)!=1L || !is.finite(data.scale) || data.scale<=0)
+    stop("data.scale must be a positive finite number.")
+  if (identical(xlim,c(0,0))) xlim <- c(-1.3,1.3)
+  if (identical(ylim,c(0,0))) ylim <- c(-1.3,1.3)
+  if (length(xlim)!=2L || length(ylim)!=2L || diff(xlim)<=0 || diff(ylim)<=0)
+    stop("xlim and ylim must be increasing length-two vectors.")
 
-    col <- col2rgb("grey30")/255
-    polygon(upp,col=rgb(col[1], col[2], col[3], alpha = 0.3),
-            border=rgb(col[1], col[2], col[3], alpha = 0.3))
-    polygon(low,col=rgb(1,1,1),border=rgb(col[1], col[2], col[3], alpha = 0.3))
-    lines(c(-1.2,1.2),c(0,0),col="black")
-    lines(c(0,0),c(-1.2,1.2),col="black")
-    text(c(-1.30,1.30,0,0),c(0,0,-1.30,1.30),cex=cex.txt,
-         c(expression(pi),0,expression(3*pi/2),expression(pi/2)),col="black")
-    points(fitted.mod$X/log(nrow(fitted.mod$X)/2),col="grey35",pch=16,cex=cex.pts)
-    if(mean_med=="mean"){
-      lines(pol2cart(cbind(fitted.mod$mesh$loc,mean.G)))
-    }else{
-      lines(pol2cart(cbind(fitted.mod$mesh$loc,emp.quants[2,])))
-    }
+  X.plot <- fitted.mod$X/data.scale
+  graphics::plot(X.plot,col="grey35",xlim=xlim,ylim=ylim,pch=16,
+    cex=cex.pts,xaxt="n",yaxt="n",bty="n",xlab="",ylab="")
+  band.col <- grDevices::col2rgb("grey30")/255
+  graphics::polygon(upp,
+    col=grDevices::rgb(band.col[1],band.col[2],band.col[3],alpha=.3),
+    border=grDevices::rgb(band.col[1],band.col[2],band.col[3],alpha=.3))
+  graphics::polygon(low,col="white",
+    border=grDevices::rgb(band.col[1],band.col[2],band.col[3],alpha=.3))
 
-    segments(-1,1,1,1,lty="dotted",col="grey50")
-    segments(-1,1,-1,-1,lty="dotted",col="grey50")
-    segments(-1,-1,1,-1,lty="dotted",col="grey50")
-    segments(1,-1,1,1,lty="dotted",col="grey50")
-  }else if(fitted.mod$options$excess.dist.fam=="GP"){
+  graphics::lines(c(xlim[1]*.92,xlim[2]*.92),c(0,0),col="black")
+  graphics::lines(c(0,0),c(ylim[1]*.92,ylim[2]*.92),col="black")
+  graphics::text(c(xlim[1],xlim[2],0,0),c(0,0,ylim[1],ylim[2]),
+    cex=cex.txt,c(expression(pi),0,expression(3*pi/2),expression(pi/2)),
+    col="black",xpd=NA)
+  graphics::points(X.plot,col="grey35",pch=16,cex=cex.pts)
+  centre <- if(mean_med=="mean") mean.G else emp.quants[2,]
+  graphics::lines(pol2cart(cbind(fitted.mod$mesh$loc,centre)))
 
-    if(mean_med=="mean"){
-      mean_med <- pol2cart(cbind(fitted.mod$mesh$loc,mean.G))
-    }else{
-      mean_med <- pol2cart(cbind(fitted.mod$mesh$loc,emp.quants[2,]))
-    }
-
-    lims.low <- floor(min(upp))
-    lims.up <- ceiling(max(upp))
-    lims <- c(lims.low,lims.up)*1.1
-
-    plot(mean_med,col="grey35",xaxt="n",yaxt="n",xlim=lims,ylim=lims,
-         pch=16,cex=cex.pts,cex.lab=1.6,cex.axis=cex.axis,bty="n",xlab="",ylab="")
-    axis(1, at = seq(lims[1], lims[2], by = by),cex.axis=cex.axis)
-    axis(2, at = seq(lims[1], lims[2], by = by),cex.axis=cex.axis)
-
-    col <- col2rgb("grey30")/255
-    polygon(upp,col=rgb(col[1], col[2], col[3], alpha = 0.3),
-            border=rgb(col[1], col[2], col[3], alpha = 0.3))
-    polygon(low,col=rgb(1,1,1),border=rgb(col[1], col[2], col[3], alpha = 0.3))
+  if (isTRUE(show.reference.box)) {
+    graphics::segments(-1,1,1,1,lty="dotted",col="grey50")
+    graphics::segments(-1,1,-1,-1,lty="dotted",col="grey50")
+    graphics::segments(-1,-1,1,-1,lty="dotted",col="grey50")
+    graphics::segments(1,-1,1,1,lty="dotted",col="grey50")
   }
+  invisible(list(centre=centre,lower=low,upper=upp,data.scale=data.scale,
+                 xlim=xlim,ylim=ylim,show.reference.box=show.reference.box))
 }
 
 #' Title
@@ -1590,6 +1603,8 @@ pp_W_2d <- function(fitted.mod,n.samp,thresh.num=NA){
 #'
 #' @examples
 X_to_uniform_on_Ball_2d <- function(fitted.mod){
+  if(is_gp_excess_family(fitted.mod$options$excess.dist.fam))
+    stop("The uniform-ball diagnostic is currently implemented only for excess.dist.fam='E'.")
 
   get_integrating_constant_2d <- function(mesh,log.f,n.MC.samp){
     Us <- runif(n.MC.samp,-pi,pi)

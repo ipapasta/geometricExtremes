@@ -22,13 +22,15 @@ set.options(
   phi.prior.sigma = c(5, 0.8),
   mesh.knots.2d = seq(-pi, pi, by = pi/400),
   mesh.res.3d = 20,
-  seed = 0L
+  seed = 0L,
+  egp.xi.interval = c(-0.5, 0.5),
+  egp.prior.rate = 5
 )
 }
 \arguments{
 \item{X}{n by d observations matrix.}
 
-\item{excess.dist.fam}{Exponential ("E") or generalised Pareto ("GP") excesses.}
+\item{excess.dist.fam}{Exponential ("E"), positive-shape generalised Pareto ("GP"), or experimental signed-shape GP via EGP with kappa fixed at one ("EGP").}
 
 \item{W.model}{Directional model: "M1" decoupled (L=B), "M2" shared-geometry (L=G), or "M3" residual-adjustment (L=BG). Before version 0.0.0.9001, M1 and M2 had the opposite meanings.}
 
@@ -61,6 +63,10 @@ set.options(
 \item{mesh.res.3d}{Subdivision resolution for a semi-regular spherical triangulation with equidistant points along equidistant latitude bands.}
 
 \item{seed}{Random number generator seed passed on to INLA::inla.posterior.sample.}
+
+\item{egp.xi.interval}{Experimental EGP lower and upper bounds for the global GP shape xi. Must straddle zero.}
+
+\item{egp.prior.rate}{Rate parameter of INLA's pc.egptail prior for experimental EGP fits.}
 }
 \value{
 A list of options.

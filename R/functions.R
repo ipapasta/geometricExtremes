@@ -1,7 +1,7 @@
 #' Set options used by functions fit_Qq and fit_GL
 #'
 #' @param X n by d observations matrix.
-#' @param excess.dist.fam Exponential ("E") or generalised Pareto ("GP") excesses.
+#' @param excess.dist.fam Exponential ("E"), positive-shape generalised Pareto ("GP"), or experimental signed-shape GP via EGP with kappa fixed at one ("EGP").
 #' @param W.model Directional model: "M1" decoupled (L=B), "M2" shared-geometry (L=G), or "M3" residual-adjustment (L=BG). Before version 0.0.0.9001, M1 and M2 had the opposite meanings.
 #' @param W.data Angles to include in likelihood: all angles ("AllW") or only those of exceedances of Q_q ("ExcOnly").
 #' @param use.mean.Qq Boolean: use mean of Qq to fit G and L if TRUE, use samples from Qq otherwise.
@@ -17,6 +17,8 @@
 #' @param phi.prior.sigma A length 2 vector, with (sigma0,Psigma) specifying that P(σ > σ_0)=p_σ, where σ is the marginal standard deviation of the field B. If Psigma is NA, then sigma0 is used as a fixed range value.
 #' @param mesh.knots.2d Sequence of knots in a subset of of the interval -pi to pi.
 #' @param mesh.res.3d Subdivision resolution for a semi-regular spherical triangulation with equidistant points along equidistant latitude bands.
+#' @param egp.xi.interval Experimental EGP lower and upper bounds for the global GP shape xi. Must straddle zero.
+#' @param egp.prior.rate Rate parameter of INLA's pc.egptail prior for experimental EGP fits.
 #' @param seed Random number generator seed passed on to INLA::inla.posterior.sample.
 #'
 #' @return A list of options.
@@ -48,23 +50,32 @@ set.options <- function(X,excess.dist.fam,W.model,W.data,
                         zeta.prior.range = c(0.5, 0.999),zeta.prior.sigma = c(5, 0.8),
                         phi.prior.range  = c(0.5, 0.999),phi.prior.sigma  = c(5, 0.8),
                         mesh.knots.2d    = seq(-pi,pi,by=pi/400),mesh.res.3d      = 20,
-                        seed             = 0L){
+                        seed             = 0L,
+                        egp.xi.interval  = c(-0.5,0.5),egp.prior.rate = 5){
   if(missing(X)){
     stop("Specify value of X.")
   }
   if(missing(excess.dist.fam)){
-    stop("Specify value of excess.dist.fam: 'E' or 'GP'.")
-  }else if(!(excess.dist.fam %in% c("E","GP"))){
-    stop("Choose family for {R-r_Q(w) | R>r_Q(w), W=w} from: 'E', 'GP'")
+    stop("Specify value of excess.dist.fam: 'E', 'GP' or experimental 'EGP'.")
+  }else if(!(excess.dist.fam %in% c("E","GP","EGP"))){
+    stop("Choose family for {R-r_Q(w) | R>r_Q(w), W=w} from: 'E', 'GP', 'EGP'.")
   }
 
-  if(excess.dist.fam=="GP"){
-    # stop("Functionality available very soon.")
-    if(missing(alpha)){
+  if(is_gp_excess_family(excess.dist.fam)){
+    if(missing(alpha) || length(alpha)!=1L || !is.finite(alpha) || alpha<=0 || alpha>=1)
       stop("Specify value of alpha in (0,1).")
-    }
   }else{
     alpha <- NA
+  }
+  if(excess.dist.fam=="EGP"){
+    if(length(egp.xi.interval)!=2L || any(!is.finite(egp.xi.interval)) ||
+       egp.xi.interval[1]>=0 || egp.xi.interval[2]<=0 ||
+       egp.xi.interval[1]>=egp.xi.interval[2])
+      stop("egp.xi.interval must be increasing and straddle zero.")
+    if(length(egp.prior.rate)!=1L || !is.finite(egp.prior.rate) || egp.prior.rate<=0)
+      stop("egp.prior.rate must be a positive finite number.")
+    warning("Experimental EGP option: kappa is fixed at 1 and xi is global; downstream return sets and uniform-ball diagnostics are unavailable.",
+            call.=FALSE)
   }
 
   if(missing(W.model)){
@@ -121,7 +132,7 @@ set.options <- function(X,excess.dist.fam,W.model,W.data,
     }
   }else if(ncol(X)==3){
     if(excess.dist.fam=="GP"){
-      stop("Functionality available very soon.")
+      stop("Positive-shape GP functionality is not available for d=3; use experimental excess.dist.fam='EGP'.")
     }
     if(missing(mesh.res.3d)){
       stop("Specify value of mesh.res.3d.")
@@ -148,6 +159,8 @@ set.options <- function(X,excess.dist.fam,W.model,W.data,
               phi.prior.sigma  = phi.prior.sigma,
               mesh.knots.2d    = mesh.knots.2d,
               mesh.res.3d      = mesh.res.3d,
+              egp.xi.interval  = egp.xi.interval,
+              egp.prior.rate   = egp.prior.rate,
               seed             = seed,
               N.X              = nrow(X)))
 }
@@ -502,8 +515,8 @@ prob_estimation <- function(fitted.mod,post.sample,x_B,y_B){
 #'
 #' @examples
 return_set <- function(fitted.mod,set="classic",alpha=0.05,conf="sim",t=NA,q.prime=NA,include.Qq=FALSE,LapTransf=NA,n.MC.samp=10000){
-  if(fitted.mod$options$excess.dist.fam=="GP"){
-    stop("Return sets for GP exceedances not yet implemented.")
+  if(is_gp_excess_family(fitted.mod$options$excess.dist.fam)){
+    stop("Return sets for GP/experimental EGP excesses are not implemented; negative xi also imposes a finite radial endpoint.")
   }
   if(inherits(t,"logical") & inherits(q.prime,"logical")){
     stop("Specify a value for t or q.prime.")
@@ -573,7 +586,7 @@ return_set <- function(fitted.mod,set="classic",alpha=0.05,conf="sim",t=NA,q.pri
 #'
 #' @examples
 alpha_posterior <- function(fitted.mod){
-  if(fitted.mod$options$excess.dist.fam=="GP"){
+  if(is_gp_excess_family(fitted.mod$options$excess.dist.fam)){
     stop("alpha estimation only available for X in Laplace margins, with excess.dist.fam='E'.")
   }
   if(ncol(fitted.mod$X)==2){
@@ -593,8 +606,8 @@ alpha_posterior <- function(fitted.mod){
 #'
 #' @examples
 eta_posterior <- function(fitted.mod){
-  if(fitted.mod$options$excess.dist.fam=="GP"){
-    stop("alpha estimation only available for X in Laplace margins, with excess.dist.fam='E'.")
+  if(is_gp_excess_family(fitted.mod$options$excess.dist.fam)){
+    stop("eta estimation only available for X in Laplace margins, with excess.dist.fam='E'.")
   }
   if(ncol(fitted.mod$X)==2){
     etas <- eta_posterior_2d(fitted.mod)
@@ -645,17 +658,34 @@ plot_Qq <- function(fitted.Qq,alpha=0.05,conf="sim",surface3d="mean",cex.pts=0.4
 #' @param xlab Label of the x-axis.
 #' @param ylab Label of the y-axis.
 #' @param zlab Label of the z-axis.
-#' @param by Length of intervals between axis ticks and displayed values.
+#' @param by Retained for backward compatibility; not used by the 2D geometric layout.
+#' @param mean_med Centre curve in 2D: posterior "mean" or pointwise "median".
+#' @param data.scale Positive scale applied to the 2D data cloud. The default is
+#'   `log(n/2)`, matching the geometric-extremes limit-set display.
+#' @param show.reference.box Show the dotted `[-1,1]^2` Laplace-margin reference
+#'   box in 2D.
+#' @param cex.txt Size of the angular direction labels in 2D.
 #'
-#' @return None.
+#' @return Invisibly returns plotted 2D summaries; 3D plotting is side-effect only.
 #' @export
 #'
 #' @examples
-plot_G <- function(fitted.mod,alpha=0.05,conf="sim",surface3d="mean",surf.col="grey",cex.pts=0.4,cex.axis=1.4,xlim=c(0,0),ylim=c(0,0),xlab=expression(X[1]),ylab=expression(X[2]),zlab=expression(X[3]),by=2){
+plot_G <- function(fitted.mod,alpha=0.05,conf="sim",surface3d="mean",
+                   surf.col="grey",cex.pts=0.4,cex.axis=1.4,
+                   xlim=c(0,0),ylim=c(0,0),xlab=expression(X[1]),
+                   ylab=expression(X[2]),zlab=expression(X[3]),by=2,
+                   mean_med="mean",data.scale=NULL,
+                   show.reference.box=TRUE,cex.txt=1.4){
   if(ncol(fitted.mod$X)==2){
-    plot_G_2d(fitted.mod,alpha,conf=conf,mean_med=TRUE,cex.txt=1.4,cex.pts=0.6,transf.G = FALSE,cex.axis=1.4,by=2)
+    return(invisible(plot_G_2d(fitted.mod,alpha,conf=conf,
+      mean_med=mean_med,cex.txt=cex.txt,cex.pts=cex.pts,transf.G=FALSE,
+      xlim=xlim,ylim=ylim,data.scale=data.scale,
+      show.reference.box=show.reference.box)))
   }else if(ncol(fitted.mod$X)==3){
-    plot_G_3d(fitted.mod,alpha,conf=conf,surface=surface3d,xlab=xlab,ylab=ylab,zlab=zlab,surf.col=surf.col)
+    plot_G_3d(fitted.mod,alpha,conf=conf,surface=surface3d,
+      xlab=xlab,ylab=ylab,zlab=zlab,surf.col=surf.col)
+  }else{
+    stop("fitted.mod$X must have two or three columns.")
   }
 }
 
@@ -895,6 +925,8 @@ K_hat <- function(thinned_U,subset,s=seq(0, 2, len=30),phi=seq(0, pi, len=30)){
 #'
 #' @examples
 X_to_uniform_on_Ball <- function(fitted.mod){
+  if(is_gp_excess_family(fitted.mod$options$excess.dist.fam))
+    stop("The uniform-ball diagnostic is currently implemented only for excess.dist.fam='E'.")
   d <- ncol(fitted.mod$X)
 
   if(d==2){

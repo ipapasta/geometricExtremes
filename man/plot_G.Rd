@@ -17,7 +17,11 @@ plot_G(
   xlab = expression(X[1]),
   ylab = expression(X[2]),
   zlab = expression(X[3]),
-  by = 2
+  by = 2,
+  mean_med = "mean",
+  data.scale = NULL,
+  show.reference.box = TRUE,
+  cex.txt = 1.4
 )
 }
 \arguments{
@@ -45,10 +49,20 @@ plot_G(
 
 \item{zlab}{Label of the z-axis.}
 
-\item{by}{Length of intervals between axis ticks and displayed values.}
+\item{by}{Retained for backward compatibility; not used by the 2D geometric layout.}
+
+\item{mean_med}{Centre curve in 2D: posterior "mean" or pointwise "median".}
+
+\item{data.scale}{Positive scale applied to the 2D data cloud. The default is
+\code{log(n/2)}, matching the geometric-extremes limit-set display.}
+
+\item{show.reference.box}{Show the dotted \verb{[-1,1]^2} Laplace-margin reference
+box in 2D.}
+
+\item{cex.txt}{Size of the angular direction labels in 2D.}
 }
 \value{
-None.
+Invisibly returns plotted 2D summaries; 3D plotting is side-effect only.
 }
 \description{
 Plot the posterior mean and (1-alpha)-predictive intervals for G
