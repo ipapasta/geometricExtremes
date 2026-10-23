@@ -15,11 +15,6 @@ remotes::install_github("ipapasta/geometricExtremes")
 ```
 
 ## Recent updates
-
-- Directional models follow the manuscript convention: **M1 decoupled**, **M2 shared-geometry**, and **M3 residual-adjustment**.
-- `excess.dist.fam = "EGP"` fits a signed-shape GP model using INLA's EGP likelihood with `kappa = 1`.
-- Two-dimensional radial scale-set plots now use a common geometric layout.
-
 See [NEWS.md](NEWS.md) for details.
 
 ## Examples

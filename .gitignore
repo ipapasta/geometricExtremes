@@ -1,3 +1,5 @@
 .Rproj.user
 geometricExtremes.Rproj
 .Rhistory
+validation/*.rds
+validation/*.log

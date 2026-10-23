@@ -4,3 +4,6 @@
 ^EXAMPLES\.md$
 ^Citation\.bib$
 ^figures
+^validation$
+^assistant\.(org|html)$
+^#assistant\.org#$
