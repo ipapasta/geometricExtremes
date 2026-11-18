@@ -320,12 +320,20 @@ fit_GL_3d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(
 }
 
 sample_LGCP_fix_3d <- function(n,log.L,fitted.mod){
-  new.w <- sample.lgcp(fitted.mod$mesh,log.L, ignore.CRS=TRUE)@coords
+  # Keep the sphere CRS so inlabru samples on the sphere (ignore.CRS=TRUE makes
+  # it treat the mesh as planar and return 2D points); R=1 gives unit-sphere
+  # areas. Returned coordinates may be on another radius, so normalise them.
+  sample_dirs <- function(ll){
+    pts <- sample.lgcp(fitted.mod$mesh, ll, R=1)
+    if (nrow(pts) == 0) return(matrix(numeric(0), 0, 3))
+    xyz <- sf::st_coordinates(pts)[, 1:3, drop=FALSE]
+    unname(xyz/sqrt(rowSums(xyz^2)))
+  }
+  new.w <- sample_dirs(log.L)
   exp.num.samp <- nrow(new.w)
   mod.exp.num.samp <- log((n-exp.num.samp)/exp.num.samp)
   while(nrow(new.w)<n){
-    new.w <- rbind(new.w,
-                   sample.lgcp(fitted.mod$mesh,log.L+mod.exp.num.samp, ignore.CRS=TRUE)@coords)
+    new.w <- rbind(new.w, sample_dirs(log.L+mod.exp.num.samp))
   }
   list(w=new.w[1:n,])
 }
@@ -373,7 +381,7 @@ sample_QGW_posterior_3d <- function(fitted.mod,N.w){
 
     post.samp$Qq.at.w[[i]] <- list()
     for(j in 1:N.GW){
-      A <- inla.mesh.projector(mesh=mesh,loc=samp.w[[j]]$w)$proj$A
+      A <- fmesher::fm_basis(mesh,loc=samp.w[[j]]$w)
       if(fitted.mod$options$excess.dist.fam=="E"){
         post.samp$g.at.w[[i]][[j]] <- as.vector(A %*% fitted.mod$g[[i]][[j]])
       }else{
@@ -460,7 +468,7 @@ return_set_3d_isotropic <- function(fitted.mod,alpha=0.05,conf="sim",t,n.MC.samp
   get_integrating_constant_3d <- function(mesh,log.f,n.MC.samp){
     Us <- t(apply(matrix(rnorm(3*n.MC.samp),ncol=3),1,function(x) x/sqrt(sum(x^2))))
 
-    A <- inla.mesh.projector(mesh=mesh,loc=Us)$proj$A
+    A <- fmesher::fm_basis(mesh,loc=Us)
     lambda_at_Us <- exp(as.vector(A %*%log.f))
     int_const <- 4*pi*mean(lambda_at_Us)
     int_const
@@ -541,7 +549,7 @@ plot_Qq_3d <- function(fitted.Qq,surface="mean",alpha=0.05,conf="marg",xlab=expr
                             X1=X[,1], X2=X[,2], X3=X[,3])
 
   data.unit.sphere <- sph2cart(cbind(as.matrix(dfRphitheta[,2:3]),1))
-  A.Qq <- inla.mesh.projector(mesh=mesh.globe,loc=data.unit.sphere)$proj$A
+  A.Qq <- fmesher::fm_basis(mesh.globe,loc=data.unit.sphere)
 
   # exc.inds <- c()
   # for(i in 1:options$N.Qq){
@@ -581,7 +589,7 @@ plot_Qq_3d <- function(fitted.Qq,surface="mean",alpha=0.05,conf="marg",xlab=expr
   locs.polar     <- as.matrix(data.frame(expand.grid(theta=seq(-pi, pi, len=N), phi = seq(-pi/2, pi/2, len=N)), r=rep(1, 10*10)))
   locs.cartesian <- sph2cart(locs.polar)
 
-  A <- inla.mesh.projector(mesh=fitted.Qq$mesh,loc=locs.cartesian)$proj$A
+  A <- fmesher::fm_basis(fitted.Qq$mesh,loc=locs.cartesian)
   Qq.on.grid <- as.vector(A %*% partial.Qq)
   Qq.m <- matrix(Qq.on.grid, nrow=N, ncol=N)
 
@@ -629,7 +637,7 @@ plot_G_3d <- function(fitted.mod,alpha=0.05,conf="marg",surface,xlab=expression(
                             X1=X[,1], X2=X[,2], X3=X[,3])
 
   data.unit.sphere <- sph2cart(cbind(as.matrix(dfRphitheta[,2:3]),1))
-  A.Qq <- inla.mesh.projector(mesh=mesh.globe,loc=data.unit.sphere)$proj$A
+  A.Qq <- fmesher::fm_basis(mesh.globe,loc=data.unit.sphere)
 
   exc.inds <- c()
   for(i in 1:length(fitted.mod$G)){
@@ -671,7 +679,7 @@ plot_G_3d <- function(fitted.mod,alpha=0.05,conf="marg",surface,xlab=expression(
   locs.polar     <- as.matrix(data.frame(expand.grid(theta=seq(-pi, pi, len=N), phi = seq(-pi/2, pi/2, len=N)), r=rep(1, 10*10)))
   locs.cartesian <- sph2cart(locs.polar)
 
-  A <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=locs.cartesian)$proj$A
+  A <- fmesher::fm_basis(fitted.mod$mesh,loc=locs.cartesian)
   partial.G.on.grid <- as.vector(A %*% partial.G)
   partial.G.m <- matrix(partial.G.on.grid, nrow=N, ncol=N)
 
@@ -734,7 +742,7 @@ plot_return_bdry_3d <- function(fitted.mod,list_ret_sets,surface="mean",cex.pts=
     locs.polar     <- as.matrix(data.frame(expand.grid(theta=seq(-pi, pi, len=N), phi = seq(-pi/2, pi/2, len=N)), r=rep(1, 10*10)))
     locs.cartesian <- sph2cart(locs.polar)
 
-    A <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=locs.cartesian)$proj$A
+    A <- fmesher::fm_basis(fitted.mod$mesh,loc=locs.cartesian)
     partial.G.on.grid <- as.vector(A %*% partial.G)
     partial.G.m <- matrix(partial.G.on.grid, nrow=N, ncol=N)
 
@@ -744,7 +752,7 @@ plot_return_bdry_3d <- function(fitted.mod,list_ret_sets,surface="mean",cex.pts=
 
     R <- apply(fitted.mod$X,1,function(xx) sqrt(sum(xx^2)))
     W <- fitted.mod$X/R
-    A.obs <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=W)$proj$A
+    A.obs <- fmesher::fm_basis(fitted.mod$mesh,loc=W)
     r_Qq_at_w_obs  <- as.vector(A.obs %*%partial.G)
 
     X.exc <- fitted.mod$X[R>r_Qq_at_w_obs,]
@@ -841,7 +849,7 @@ X_to_uniform_on_Ball_3d <- function(fitted.mod,q=NULL,n.integration=16384L){
   get_integrating_constant_3d <- function(mesh,log.f,n.MC.samp){
     Us <- t(apply(matrix(rnorm(3*n.MC.samp),ncol=3),1,function(x) x/sqrt(sum(x^2))))
 
-    A <- inla.mesh.projector(mesh=mesh,loc=Us)$proj$A
+    A <- fmesher::fm_basis(mesh,loc=Us)
     lambda_at_Us <- exp(as.vector(A %*%log.f))
     int_const <- 4*pi*mean(lambda_at_Us)
     int_const
@@ -856,7 +864,7 @@ X_to_uniform_on_Ball_3d <- function(fitted.mod,q=NULL,n.integration=16384L){
   R <- apply(X, 1, function(x) sqrt(sum(x^2)))
   W <- X/R
 
-  A.obs <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=W)$proj$A
+  A.obs <- fmesher::fm_basis(fitted.mod$mesh,loc=W)
   if(fitted.mod$options$use.mean.Qq==TRUE){
     N.Qq <- 1
   }else{

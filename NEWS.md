@@ -11,6 +11,18 @@
   some direction. The 2D function previously printed draw indices to the
   console; the 3D function did not check at all.
 
+- Replaced the deprecated `INLA::inla.mesh.projector()` and
+  `INLA::inla.mesh.1d()` with `fmesher::fm_basis()` and `fmesher::fm_mesh_1d()`
+  throughout. The projection matrices are identical; this only removes the
+  deprecation warnings.
+
+- Fixed direction sampling in 3D (`sample_QGW_posterior()` for d = 3). It
+  called `inlabru::sample.lgcp(..., ignore.CRS = TRUE)`, which makes inlabru
+  treat the sphere mesh as planar and return 2D points; with current inlabru it
+  also failed outright on the returned `sf` object. Sampling now keeps the
+  sphere CRS, uses unit-sphere areas (`R = 1`) and returns unit vectors. `sf`
+  is added to Imports.
+
 - Documented the `q` and `n.integration` arguments of
   `X_to_uniform_on_Ball()` and its 2D/3D variants, and gave the exported
   2D/3D helper functions proper help-page titles.

@@ -474,7 +474,7 @@ sample_QGW_posterior_2d <- function(fitted.mod,N.w,S_B=NA,transf.G=F){
 
     post.samp$Qq.at.w[[i]] <- list()
     for(j in 1:N.GW){
-      A <- inla.mesh.projector(mesh=mesh,loc=w[[j]])$proj$A
+      A <- fmesher::fm_basis(mesh,loc=w[[j]])
       if(fitted.mod$options$excess.dist.fam=="E"){
         if(transf.G==F){
           post.samp$g.at.w[[i]][[j]] <- as.vector(A %*% fitted.mod$g[[i]][[j]])
@@ -575,7 +575,7 @@ prob_estimation_2d <- function(fitted.mod,post.sample,x,y){
     for(i in 1:N.Qq){
       message(paste0("Probabilities for threshold Q_q ",i,"/",N.Qq))
 
-      A <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=W)$proj$A
+      A <- fmesher::fm_basis(fitted.mod$mesh,loc=W)
       Qq  <- as.vector(A %*% fitted.mod$Qq[,i])
 
       ind.R.Bi <- R> r_infsup[,1] & R < Qq & R< r_infsup[,2]
@@ -613,7 +613,7 @@ prob_estimation_2d <- function(fitted.mod,post.sample,x,y){
     for(i in 1:N.Qq){
       message(paste0("Probabilities for threshold Q_q ",i,"/",N.Qq))
 
-      A <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=W)$proj$A
+      A <- fmesher::fm_basis(fitted.mod$mesh,loc=W)
       Qq  <- as.vector(A %*% fitted.mod$Qq[,i])
 
       ind.R.Bi <- R> r_infsup[,1] & R < Qq & R< r_infsup[,2]
@@ -708,7 +708,7 @@ chi_posterior <- function(fitted.mod,u,conditioning.marg=1,N.w=5000,transf.G=F){
 
     for(i in 1:N.Qq){
       message(paste0("Chi(u) estimation for threshold Q_q ",i,"/",N.Qq))
-      A <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=W)$proj$A
+      A <- fmesher::fm_basis(fitted.mod$mesh,loc=W)
       Qq  <- as.vector(A %*% fitted.mod$Qq[,i])
 
       ind.R.Bi.sq <- R> r_infsup.sq[,1] & R < Qq
@@ -860,7 +860,7 @@ return_set_2d_isotropic <- function(fitted.mod,alpha=0.05,conf="sim",t,n.MC.samp
   get_integrating_constant_2d <- function(mesh,log.f,n.MC.samp){
     Us <- runif(n.MC.samp,-pi,pi)
 
-    A <- inla.mesh.projector(mesh=mesh,loc=Us)$proj$A
+    A <- fmesher::fm_basis(mesh,loc=Us)
     lambda_at_Us <- exp(as.vector(A %*%log.f))
     int_const <- 2*pi*mean(lambda_at_Us)
     int_const
@@ -1018,9 +1018,9 @@ dG_transformation <- function(fitted.mod){
                       G.ij,
                       c(pi,mean(G.ij[c(1,nrow(G.ij)),2])))
 
-        mesh <- inla.mesh.1d(G.ij[,1],
-                             boundary="cyclic",degree=1)
-        A.G.ij <- inla.mesh.projector(mesh=mesh,loc=fitted.mod$mesh$loc)$proj$A
+        mesh <- fmesher::fm_mesh_1d(G.ij[,1],
+                                     boundary="cyclic",degree=1)
+        A.G.ij <- fmesher::fm_basis(mesh,loc=fitted.mod$mesh$loc)
         G.ij.mesh <- as.vector(A.G.ij %*% G.ij[-nrow(G.ij),2])
         G[[i]][[j]] <- G.ij.mesh
       }else{
@@ -1050,9 +1050,9 @@ dG_transformation <- function(fitted.mod){
                       G.ij,
                       c(pi,mean(G.ij[c(1,nrow(G.ij)),2])))
 
-        mesh <- inla.mesh.1d(G.ij[,1],
-                             boundary="cyclic",degree=1)
-        A.G.ij <- inla.mesh.projector(mesh=mesh,loc=fitted.mod$mesh$loc)$proj$A
+        mesh <- fmesher::fm_mesh_1d(G.ij[,1],
+                                     boundary="cyclic",degree=1)
+        A.G.ij <- fmesher::fm_basis(mesh,loc=fitted.mod$mesh$loc)
         G.ij.mesh <- as.vector(A.G.ij %*% G.ij[-nrow(G.ij),2])
         G[[i]][[j]] <- G.ij.mesh
       }
@@ -1077,7 +1077,7 @@ eta_posterior_2d <- function(fitted.mod,Transf.G=TRUE){
     G <- fitted.mod$G
   }
   etas <- rep(NA,length(G)*length(G[[1]]))
-  A <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=pi/4)$proj$A
+  A <- fmesher::fm_basis(fitted.mod$mesh,loc=pi/4)
   cnt <- 1
   for(i in 1:length(G)){
     for(j in 1:length(G[[1]])){
@@ -1146,7 +1146,7 @@ plot_Qq_2d <- function(fitted.Qq,alpha,conf="sim",cex.pts=0.4,cex.axis=1.4,xlim=
   W <- atan2(y=X[,2], x=X[,1])
   ind.exc <- c()
   for(i in 1:ncol(fitted.Qq$Qq)){
-    A.Qq <- inla.mesh.projector(mesh=fitted.Qq$mesh,loc=W)$proj$A
+    A.Qq <- fmesher::fm_basis(fitted.Qq$mesh,loc=W)
     R.W <- as.vector(A.Qq %*%fitted.Qq$Qq[,i])
     ind.exc <- c(ind.exc,which(R>R.W))
   }
@@ -1273,7 +1273,7 @@ plot_W_2d <- function(fitted.mod,alpha,conf="sim",xylim,main="",mid.gap=0.1, txt
   W <- atan2(y=X[,2], x=X[,1])
 
   if(exconly==T){
-    A.Qq <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=W)$proj$A
+    A.Qq <- fmesher::fm_basis(fitted.mod$mesh,loc=W)
     R.W <- as.vector(A.Qq %*% fitted.mod$Qq.mean$mean)
     ind.exc <- R-R.W>0
     X <- X[ind.exc,]
@@ -1388,7 +1388,7 @@ plot_return_bdry_2d <- function(fitted.mod,list_ret_sets,cex.pts=0.4,cex.axis=1.
   X <- fitted.mod$X
   R <- apply(X, 1, function(x) sqrt(sum(x^2)))
   W <- atan2(y=X[,2], x=X[,1])
-  A.Qq <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=W)$proj$A
+  A.Qq <- fmesher::fm_basis(fitted.mod$mesh,loc=W)
   R.Qq <- apply(list_ret_sets[[3]]$mean,1,function(x) sqrt(sum(x^2)))
   R.W <- as.vector(A.Qq %*% R.Qq)
   ind.exc <- R-R.W>0
@@ -1498,11 +1498,11 @@ pp_R_w_2d <- function(fitted.mod,n.samp){
   dfRW <- data.frame(R=R, W=W)
 
   min.Qq <- apply(fitted.mod$Qq,1,min)
-  A.Qq <- inla.mesh.projector(mesh=mesh,loc=dfRW$W)$proj$A
+  A.Qq <- fmesher::fm_basis(mesh,loc=dfRW$W)
   dfRW$thres.gamma      <- as.vector(A.Qq %*%min.Qq)
   dfRW$is.excess        <- ifelse(dfRW$R - dfRW$thres.gamma > 0 , 1, 0)
   dfRW.exc <- dfRW[dfRW$is.excess==1,]
-  A.Qq.exc <- inla.mesh.projector(mesh=mesh,loc=dfRW.exc$W)$proj$A
+  A.Qq.exc <- fmesher::fm_basis(mesh,loc=dfRW.exc$W)
 
   Qq.at.w <- matrix(NA,nrow(dfRW.exc),options$N.Qq)
   g.at.w   <- list()
@@ -1549,7 +1549,7 @@ pp_W_2d <- function(fitted.mod,n.samp,thresh.num=NA){
   if(is.na(thresh.num)){
 
     min.Qq <- apply(fitted.mod$Qq,1,min)
-    A.Qq <- inla.mesh.projector(mesh=mesh,loc=dfRW$W)$proj$A
+    A.Qq <- fmesher::fm_basis(mesh,loc=dfRW$W)
     dfRW$thres.gamma      <- as.vector(A.Qq %*%min.Qq)
     dfRW$is.excess        <- ifelse(dfRW$R - dfRW$thres.gamma > 0 , 1, 0)
     dfRW.exc <- dfRW[dfRW$is.excess==1,]
@@ -1560,7 +1560,7 @@ pp_W_2d <- function(fitted.mod,n.samp,thresh.num=NA){
     F.W <- stats::ecdf(ws)
 
   }else{
-    A.Qq <- inla.mesh.projector(mesh=mesh,loc=dfRW$W)$proj$A
+    A.Qq <- fmesher::fm_basis(mesh,loc=dfRW$W)
     dfRW$thres.gamma      <- as.vector(A.Qq %*%fitted.mod$Qq[,thresh.num])
     dfRW$is.excess        <- ifelse(dfRW$R - dfRW$thres.gamma > 0 , 1, 0)
     dfRW.exc <- dfRW[dfRW$is.excess==1,]
@@ -1591,7 +1591,7 @@ X_to_uniform_on_Ball_2d <- function(fitted.mod,q=NULL,n.integration=16384L){
 
   get_integrating_constant_2d <- function(mesh,log.f,n.MC.samp){
     Us <- runif(n.MC.samp,-pi,pi)
-    A <- inla.mesh.projector(mesh=mesh,loc=Us)$proj$A
+    A <- fmesher::fm_basis(mesh,loc=Us)
     lambda_at_Us <- exp(as.vector(A %*%log.f))
     int_const <- 2*pi*mean(lambda_at_Us)
     int_const
@@ -1607,7 +1607,7 @@ X_to_uniform_on_Ball_2d <- function(fitted.mod,q=NULL,n.integration=16384L){
   W <- atan2(y=X[,2], x=X[,1])
   dfRW <- data.frame(R=R, W=W)
 
-  A.obs <- inla.mesh.projector(mesh=fitted.mod$mesh,loc=dfRW$W)$proj$A
+  A.obs <- fmesher::fm_basis(fitted.mod$mesh,loc=dfRW$W)
   if(fitted.mod$options$use.mean.Qq==TRUE){
     N.Qq <- 1
   }else{

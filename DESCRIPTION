@@ -21,7 +21,7 @@ Additional_repositories: https://inla.r-inla-download.org/R/stable
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Imports:
-    INLA, inlabru, fmesher, Matrix, pracma, excursions, rmutil, stats, rgl, sp, evd, mvtnorm
+    INLA, inlabru, fmesher, Matrix, pracma, excursions, rmutil, stats, rgl, sf, sp, evd, mvtnorm
 Suggests: testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.1
