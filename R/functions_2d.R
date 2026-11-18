@@ -97,7 +97,7 @@ fit_Qq_2d <- function(X,options,config,return_fitted_obj=F){
 #' @noRd
 #'
 #' @examples
-fit_GL_2d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list()){
+fit_GL_2d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(),radial.idx=NULL){
 
   X <- fitted.Qq$X
   options <- fitted.Qq$options
@@ -187,6 +187,13 @@ fit_GL_2d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(
     dfRW.exc.only         <- dfRW[dfRW$excess.gamma > 0,] #dfRW %>% dplyr::filter(excess.gamma > 0)
     dfRW$excess.gamma     <- ifelse(dfRW$excess.gamma>0,dfRW$excess.gamma, NA)
     if (!nrow(dfRW.exc.only)) stop("No radial exceedances for threshold draw ", i)
+    if(is.null(radial.idx)){
+      dfRW.G <- dfRW.exc.only
+    }else{
+      if(length(radial.idx[[i]])==0 || !all(radial.idx[[i]] %in% which(dfRW$is.excess==1)))
+        stop("radial.idx[[", i, "]] must contain indices of exceedances of the corresponding posterior sample of Q_q.")
+      dfRW.G <- dfRW[radial.idx[[i]],]
+    }
 
     if(options$W.data=="AllW"){
       log.k <- log(nrow(dfRW))
@@ -204,7 +211,7 @@ fit_GL_2d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(
         form.W  <- W ~ 0 + Int.W - 2*Int.G - 2*zeta - phi + log.k
       }
       form.G <- excess.gamma ~ 0 + Int.G + zeta
-      lik_G <- inlabru::bru_obs(family="exponential", formula=form.G, data=dfRW.exc.only)
+      lik_G <- inlabru::bru_obs(family="exponential", formula=form.G, data=dfRW.G)
     }else if(is_gp_excess_family(options$excess.dist.fam)){
       if(architecture=="shared-geometry"){
         form.W  <- W ~ 0 + Int.W + 2*Int.G + 2*zeta + log.k
@@ -240,6 +247,7 @@ fit_GL_2d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(
     if (return_fitted_obj) fitted.mod$GL.fit.obj[[i]] <- fit_GW
     fitted.mod$model.convention <- "manuscript-v1"
     fitted.mod$model.name <- architecture
+    fitted.mod$radial.idx <- radial.idx
 
     if(is_gp_excess_family(options$excess.dist.fam)) {
       fitted.mod <- gp_store_draws(fitted.mod,fit_GW,options,2L,log.k,i)

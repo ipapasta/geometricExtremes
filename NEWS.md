@@ -1,5 +1,32 @@
 # geometricExtremes (development version)
 
+- `fit_GL()` gains a `radial.idx` argument (d = 2, `excess.dist.fam = "E"`).
+  Passing the output of `get_radial_maxima()` fits the radial likelihood to
+  the cluster radial maxima only, while the directional likelihood still uses
+  `W.data` (all exceedances, or all angles, which target the same directional
+  distribution for a quantile set). It requires `W.model = "M1"`; `"M3"` is
+  allowed with a warning (the field zeta is shared by both likelihoods) and
+  `"M2"` is rejected. With `radial.idx = NULL` (default) the fit is unchanged.
+
+- New functions `get_filtered_Z()`, `fit_theta()`, `plot_theta()` and
+  `plot_mean_cluster_size()`, ported from TemporalGeometricClustering, for the
+  directional extremal index theta(w) and the mean cluster size 1/theta(w).
+  The model is unchanged. Posterior samples of theta are now grouped by
+  posterior sample of Q_q, `fit_theta()` uses one INLA thread and can return
+  the fitted inlabru objects, the code uses the fmesher API and
+  `generate(x = )` (the original no longer ran on current inlabru), and the
+  plotting functions no longer rely on global variables. Plotting is
+  available for d = 2 only.
+
+- New functions `get_exceedances()`, `get_clusters_runs()` and
+  `get_radial_maxima()`, ported from TemporalGeometricClustering. For each
+  posterior sample of Q_q (or its posterior mean), they return the exceedance
+  times, the runs clusters of exceedances, and the radial maximum of each
+  cluster. Compared with the original code, the radial maximum is taken over
+  the exceedances of a cluster only (with a direction-dependent threshold, a
+  non-exceedance inside a cluster can have a larger radius), and
+  `use.mean.Qq = TRUE` is now honoured.
+
 - `excess.dist.fam = "GP"` and `"EGP"` now stop with a "not implemented yet"
   error in `set.options()`. The GP extension referenced helper functions whose
   definitions were never committed, so GP/EGP fits failed in `fit_GL()`.

@@ -4,7 +4,13 @@
 \alias{fit_GL}
 \title{Obtain realisations from the posterior distribution of the sets G and L}
 \usage{
-fit_GL(fitted.Qq, config, return_fitted_obj = FALSE, bru_options = list())
+fit_GL(
+  fitted.Qq,
+  config,
+  return_fitted_obj = FALSE,
+  bru_options = list(),
+  radial.idx = NULL
+)
 }
 \arguments{
 \item{fitted.Qq}{Object returned by the function fit_Qq.}
@@ -14,6 +20,8 @@ fit_GL(fitted.Qq, config, return_fitted_obj = FALSE, bru_options = list())
 \item{return_fitted_obj}{Retain each fitted inlabru object in GL.fit.obj.}
 
 \item{bru_options}{Named list overriding tail-fit inlabru options. Defaults use one thread for reproducibility.}
+
+\item{radial.idx}{Optional list returned by the function get_radial_maxima (d=2 only). If given, the radial likelihood is fitted to the cluster radial maxima only, while the directional likelihood still uses W.data. Requires W.model 'M1' or 'M3'.}
 }
 \value{
 Posterior draws, model.name and model.convention. log.L contains

@@ -401,6 +401,7 @@ fit_Qq <- function(X,options,config,return_fitted_obj=FALSE){
 #'
 #' @param return_fitted_obj Retain each fitted inlabru object in GL.fit.obj.
 #' @param bru_options Named list overriding tail-fit inlabru options. Defaults use one thread for reproducibility.
+#' @param radial.idx Optional list returned by the function get_radial_maxima (d=2 only). If given, the radial likelihood is fitted to the cluster radial maxima only, while the directional likelihood still uses W.data. Requires W.model 'M1' or 'M3'.
 #' @details M1 and M3 constrain the finite-element surface integral of phi to zero,
 #' leaving Int.W free. Here phi=-d*log(r_B), so phi.prior.sigma is on the phi
 #' scale, not the log-radial scale. The intercept retains the INLA fixed-effect
@@ -411,13 +412,27 @@ fit_Qq <- function(X,options,config,return_fitted_obj=FALSE){
 #' @export
 #'
 #' @examples
-fit_GL <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list()){
+fit_GL <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(),radial.idx=NULL){
   directional_architecture(fitted.Qq$options$W.model)
   if (!is.list(bru_options)) stop("bru_options must be a list.")
   if (any(!is.finite(fitted.Qq$X)) || any(rowSums(fitted.Qq$X^2)==0))
     stop("X must be finite and contain no zero vectors.")
+  if(!is.null(radial.idx)){
+    if(ncol(fitted.Qq$X)!=2)
+      stop("radial.idx is not implemented yet for d=3.")
+    if(fitted.Qq$options$excess.dist.fam!="E")
+      stop("radial.idx is only implemented for excess.dist.fam='E'.")
+    if(fitted.Qq$options$W.model=="M2")
+      stop("radial.idx cannot be used with W.model='M2' (shared-geometry): the directional density would be tied to the scale of the radial maxima. Use 'M1' or 'M3'.")
+    if(fitted.Qq$options$W.model=="M3")
+      warning("With W.model='M3', the field zeta is shared by the radial likelihood (radial maxima) and the directional likelihood (all exceedances); 'M1' separates them exactly.",
+              call.=FALSE)
+    N.Qq <- if(fitted.Qq$options$use.mean.Qq==TRUE) 1 else fitted.Qq$options$N.Qq
+    if(!is.list(radial.idx) || length(radial.idx)!=N.Qq)
+      stop(sprintf("radial.idx must be a list with one element per posterior sample of Q_q used by fit_GL (%d); obtain it with get_radial_maxima() using the same use.mean.Qq.",N.Qq))
+  }
   if(ncol(fitted.Qq$X)==2){
-    fitted.mod <- fit_GL_2d(fitted.Qq,config,return_fitted_obj,bru_options)
+    fitted.mod <- fit_GL_2d(fitted.Qq,config,return_fitted_obj,bru_options,radial.idx)
   }else if(ncol(fitted.Qq$X)==3){
     fitted.mod <- fit_GL_3d(fitted.Qq,config,return_fitted_obj,bru_options)
   }else{
