@@ -320,9 +320,6 @@ fit_GL_3d <- function(fitted.Qq,config,return_fitted_obj=FALSE,bru_options=list(
 }
 
 sample_LGCP_fix_3d <- function(n,log.L,fitted.mod){
-  # Keep the sphere CRS so inlabru samples on the sphere (ignore.CRS=TRUE makes
-  # it treat the mesh as planar and return 2D points); R=1 gives unit-sphere
-  # areas. Returned coordinates may be on another radius, so normalise them.
   sample_dirs <- function(ll){
     pts <- sample.lgcp(fitted.mod$mesh, ll, R=1)
     if (nrow(pts) == 0) return(matrix(numeric(0), 0, 3))

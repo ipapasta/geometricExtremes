@@ -11,6 +11,18 @@
   some direction. The 2D function previously printed draw indices to the
   console; the 3D function did not check at all.
 
+- `set.options()` now uses the default values of the prior arguments
+  (`QR.prior.*`, `zeta.prior.*`, `phi.prior.*`), `mesh.knots.2d` and
+  `mesh.res.3d` when they are not supplied. Previously it stopped with
+  "Specify value of ..." even though defaults were declared.
+
+- `set.configs()` now defaults to `file.nm = "DataName"`. The previous default
+  referred to an options list that is not available inside the function, so
+  calling `set.configs()` without `file.nm` always failed.
+
+- The error for a missing `N.GW` in `set.options()` now names `N.GW`
+  (previously it said `N.Qq`).
+
 - Replaced the deprecated `INLA::inla.mesh.projector()` and
   `INLA::inla.mesh.1d()` with `fmesher::fm_basis()` and `fmesher::fm_mesh_1d()`
   throughout. The projection matrices are identical; this only removes the

@@ -102,33 +102,13 @@ set.options <- function(X,excess.dist.fam,W.model,W.data,
     stop("Specify value of N.Qq.")
   }
   if(missing(N.GW)){
-    stop("Specify value of N.Qq.")
+    stop("Specify value of N.GW.")
   }
   # if(missing(beta)){
   #   beta <- 1
   # }
-  if(missing(QR.prior.range)){
-    stop("Specify value of QR.prior.range.")
-  }
-  if(missing(QR.prior.sigma)){
-    stop("Specify value of QR.prior.sigma.")
-  }
-  if(missing(zeta.prior.range)){
-    stop("Specify value of zeta.prior.range.")
-  }
-  if(missing(zeta.prior.sigma)){
-    stop("Specify value of zeta.prior.sigma.")
-  }
-  if(missing(phi.prior.range)){
-    stop("Specify value of phi.prior.range.")
-  }
-  if(missing(phi.prior.sigma)){
-    stop("Specify value of phi.prior.sigma.")
-  }
   if(ncol(X)==2){
-    if(missing(mesh.knots.2d)){
-      stop("Specify value of mesh.knots.2d.")
-    }else if(max(mesh.knots.2d)>pi){
+    if(max(mesh.knots.2d)>pi){
       stop("mesh.knots.2d must take values in [-pi,pi].")
     }else if(min(mesh.knots.2d)< -pi){
       stop("mesh.knots.2d must take values in [-pi,pi].")
@@ -137,9 +117,7 @@ set.options <- function(X,excess.dist.fam,W.model,W.data,
     if(excess.dist.fam=="GP"){
       stop("Positive-shape GP functionality is not available for d=3; use experimental excess.dist.fam='EGP'.")
     }
-    if(missing(mesh.res.3d)){
-      stop("Specify value of mesh.res.3d.")
-    }else if(mesh.res.3d<1){
+    if(mesh.res.3d<1){
       stop("mesh.res.3d must be greater than 1.")
     }
   }else{
@@ -184,7 +162,7 @@ set.options <- function(X,excess.dist.fam,W.model,W.data,
 #'                       save      = TRUE,
 #'                       progress  = TRUE)
 set.configs <- function(save.path = "",
-                        file.nm   = paste0("DataName","_",options$excess.dist.fam,"_",options$W.model,"_",options$W.data),
+                        file.nm   = "DataName",
                         save      = FALSE,
                         progress  = FALSE){
   if(save==TRUE & save.path==""){

@@ -6,8 +6,7 @@
 \usage{
 set.configs(
   save.path = "",
-  file.nm = paste0("DataName", "_", options$excess.dist.fam, "_", options$W.model, "_",
-    options$W.data),
+  file.nm = "DataName",
   save = FALSE,
   progress = FALSE
 )

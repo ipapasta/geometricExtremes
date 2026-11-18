@@ -59,9 +59,6 @@ egp_kappa1_control <- function(alpha, interval, prior_rate) {
   )
 }
 
-# Warn when posterior draws of an isotropic return set have a negative radius
-# in some direction, i.e. the set is not valid there (typically t too large).
-# post.ret.set: draws by mesh nodes. Returns the number of offending draws.
 warn_negative_isotropic_radius <- function(post.ret.set, t) {
   n.neg <- sum(apply(post.ret.set < 0, 1, any))
   if (n.neg > 0)

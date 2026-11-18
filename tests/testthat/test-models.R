@@ -128,3 +128,23 @@ test_that('negative isotropic radii are reported once with a count', {
                  '2 of 4 posterior draws give a negative isotropic radius.*t = 100')
   expect_equal(n, 2)
 })
+
+test_that('set.options uses its default priors and meshes', {
+  X2 <- matrix(rnorm(40),ncol=2)
+  op <- set.options(X=X2,excess.dist.fam='E',W.model='M3',W.data='ExcOnly',
+    use.mean.Qq=TRUE,q=.8,N.Qq=1,N.GW=1)
+  expect_equal(op$QR.prior.range,c(1,.999))
+  expect_equal(op$phi.prior.sigma,c(5,.8))
+  expect_equal(op$mesh.knots.2d,seq(-pi,pi,by=pi/400))
+  X3 <- matrix(rnorm(60),ncol=3)
+  expect_equal(set.options(X=X3,excess.dist.fam='E',W.model='M3',W.data='ExcOnly',
+    use.mean.Qq=TRUE,q=.8,N.Qq=1,N.GW=1)$mesh.res.3d,20)
+  expect_error(set.options(X=X2,excess.dist.fam='E',W.model='M3',W.data='ExcOnly',
+    use.mean.Qq=TRUE,q=.8,N.Qq=1,N.GW=1,mesh.knots.2d=c(-4,0,1)),'\\[-pi,pi\\]')
+})
+
+test_that('set.configs works with its default file name', {
+  cfg <- set.configs()
+  expect_identical(cfg$file.nm,'DataName')
+  expect_false(cfg$save)
+})
