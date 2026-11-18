@@ -1,3 +1,11 @@
+# geometricExtremes (development version)
+
+- `excess.dist.fam = "GP"` and `"EGP"` now stop with a "not implemented yet"
+  error in `set.options()`. The GP extension referenced helper functions whose
+  definitions were never committed, so GP/EGP fits failed in `fit_GL()`.
+  Placeholders live in `R/gp_not_implemented.R`; deleting that file and the
+  guard in `set.options()` restores the GP path once the helpers are recovered.
+
 # geometricExtremes 0.2.0
 
 ## Model definitions and identifiability

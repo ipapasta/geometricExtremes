@@ -1,7 +1,7 @@
 #' Set options used by functions fit_Qq and fit_GL
 #'
 #' @param X n by d observations matrix.
-#' @param excess.dist.fam Exponential ("E"), positive-shape generalised Pareto ("GP"), or experimental signed-shape GP via EGP with kappa fixed at one ("EGP").
+#' @param excess.dist.fam Exponential ("E"), positive-shape generalised Pareto ("GP"), or experimental signed-shape GP via EGP with kappa fixed at one ("EGP"). Only "E" is currently implemented; "GP" and "EGP" return a "not implemented yet" error.
 #' @param W.model Directional model: "M1" decoupled (L=B), "M2" shared-geometry (L=G), or "M3" residual-adjustment (L=BG). Before version 0.0.0.9001, M1 and M2 had the opposite meanings.
 #' @param W.data Angles to include in likelihood: all angles ("AllW") or only those of exceedances of Q_q ("ExcOnly").
 #' @param use.mean.Qq Boolean: use mean of Qq to fit G and L if TRUE, use samples from Qq otherwise.
@@ -59,6 +59,9 @@ set.options <- function(X,excess.dist.fam,W.model,W.data,
     stop("Specify value of excess.dist.fam: 'E', 'GP' or experimental 'EGP'.")
   }else if(!(excess.dist.fam %in% c("E","GP","EGP"))){
     stop("Choose family for {R-r_Q(w) | R>r_Q(w), W=w} from: 'E', 'GP', 'EGP'.")
+  }
+  if(is_gp_excess_family(excess.dist.fam)){
+    gp_not_implemented(excess.dist.fam)
   }
 
   if(is_gp_excess_family(excess.dist.fam)){

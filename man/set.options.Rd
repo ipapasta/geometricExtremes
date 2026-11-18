@@ -30,7 +30,7 @@ set.options(
 \arguments{
 \item{X}{n by d observations matrix.}
 
-\item{excess.dist.fam}{Exponential ("E"), positive-shape generalised Pareto ("GP"), or experimental signed-shape GP via EGP with kappa fixed at one ("EGP").}
+\item{excess.dist.fam}{Exponential ("E"), positive-shape generalised Pareto ("GP"), or experimental signed-shape GP via EGP with kappa fixed at one ("EGP"). Only "E" is currently implemented; "GP" and "EGP" return a "not implemented yet" error.}
 
 \item{W.model}{Directional model: "M1" decoupled (L=B), "M2" shared-geometry (L=G), or "M3" residual-adjustment (L=BG). Before version 0.0.0.9001, M1 and M2 had the opposite meanings.}
 

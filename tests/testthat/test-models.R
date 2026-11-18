@@ -38,7 +38,7 @@ test_that('experimental EGP helpers support negative xi stably', {
   expect_error(gp_quantile_to_scale(1,0,1),'alpha')
 })
 
-test_that('experimental EGP options are explicit and validated', {
+test_that('GP and EGP families are reported as not implemented yet', {
   X <- matrix(rnorm(40),ncol=2)
   args <- list(X=X,excess.dist.fam='EGP',W.model='M1',W.data='ExcOnly',
     use.mean.Qq=TRUE,q=.8,alpha=.5,N.Qq=1,N.GW=1,
@@ -46,11 +46,12 @@ test_that('experimental EGP options are explicit and validated', {
     zeta.prior.range=c(1,.5),zeta.prior.sigma=c(1,.5),
     phi.prior.range=c(1,.5),phi.prior.sigma=c(1,.5),
     mesh.knots.2d=seq(-pi,pi,length.out=9),mesh.res.3d=2)
-  expect_warning(op <- do.call(set.options,args),'Experimental EGP')
-  expect_identical(op$excess.dist.fam,'EGP')
-  expect_equal(op$egp.xi.interval,c(-.5,.5))
-  args$egp.xi.interval <- c(0,.5)
-  expect_error(suppressWarnings(do.call(set.options,args)),'straddle zero')
+  expect_error(do.call(set.options,args),'not implemented yet')
+  args$excess.dist.fam <- 'GP'
+  expect_error(do.call(set.options,args),'not implemented yet')
+  args$excess.dist.fam <- 'E'
+  expect_identical(do.call(set.options,args)$excess.dist.fam,'E')
+  expect_error(gp_sample_posterior(list()),'not implemented yet')
 })
 
 test_that('native constraints use surface weights including the cyclic seam', {
