@@ -838,7 +838,7 @@ return_set_2d <- function(fitted.mod,alpha=0.05,t,conf="sim",include.Qq=FALSE){
   return(ret_set_list)
 }
 
-#' Title
+#' Isotropic return level-sets in two dimensions
 #'
 #' @param fitted.mod Fitted model returned by fit_GL.
 #' @param alpha Tail probability for credible bands.
@@ -886,11 +886,9 @@ return_set_2d_isotropic <- function(fitted.mod,alpha=0.05,conf="sim",t,n.MC.samp
         ret.set.omni <- ret.set + log(f_W/fW.uniform) * fitted.mod$G[[i]][[j]]
         post.ret.set[cnt,] <- ret.set.omni
         cnt <- cnt+1
-        if(length(ret.set.omni[ret.set.omni<0])>0){
-          print(c(i,j))
-        }
       }
     }
+    warn_negative_isotropic_radius(post.ret.set, t[k])
 
     excurs <- simconf.mc(samples = t(post.ret.set),alpha = alpha)
     if(conf=="sim"){
@@ -1573,9 +1571,14 @@ pp_W_2d <- function(fitted.mod,n.samp,thresh.num=NA){
   F.W(dfRW.exc$W)
 }
 
-#' Title
+#' Transform the observations X to a uniform inside the unit disc (2D)
 #'
 #' @param fitted.mod Fitted model returned by fit_GL.
+#' @param q Probability level of the quantile set defining the transformation.
+#'   Only used for GP/EGP fits, which are not implemented yet; must be `NULL`
+#'   for exponential fits.
+#' @param n.integration Number of Monte Carlo directions for the directional
+#'   normalising constant. Only used for GP/EGP fits; ignored for exponential fits.
 #'
 #' @return A nested list of transformed point-pattern matrices.
 #' @export

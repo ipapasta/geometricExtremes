@@ -942,6 +942,11 @@ K_hat <- function(thinned_U,subset,s=seq(0, 2, len=30),phi=seq(0, pi, len=30)){
 #' Transform the observations X to a uniform inside the unit hypersphere
 #'
 #' @param fitted.mod Object returned from the function fit_GL.
+#' @param q Probability level of the quantile set defining the transformation.
+#'   Only used for GP/EGP fits, which are not implemented yet; must be `NULL`
+#'   for exponential fits.
+#' @param n.integration Number of Monte Carlo directions for the directional
+#'   normalising constant. Only used for GP/EGP fits; ignored for exponential fits.
 #'
 #' @return list of samples from the transformed point process.
 #' @export

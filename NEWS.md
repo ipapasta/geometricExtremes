@@ -6,6 +6,15 @@
   Placeholders live in `R/gp_not_implemented.R`; deleting that file and the
   guard in `set.options()` restores the GP path once the helpers are recovered.
 
+- `return_set_2d_isotropic()` and `return_set_3d_isotropic()` now warn, once
+  per return period, when posterior draws give a negative isotropic radius in
+  some direction. The 2D function previously printed draw indices to the
+  console; the 3D function did not check at all.
+
+- Documented the `q` and `n.integration` arguments of
+  `X_to_uniform_on_Ball()` and its 2D/3D variants, and gave the exported
+  2D/3D helper functions proper help-page titles.
+
 # geometricExtremes 0.2.0
 
 ## Model definitions and identifiability

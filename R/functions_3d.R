@@ -330,7 +330,7 @@ sample_LGCP_fix_3d <- function(n,log.L,fitted.mod){
   list(w=new.w[1:n,])
 }
 
-#' Title
+#' Sample directions from W and evaluate Q_q and G at these directions (3D)
 #'
 #' @param fitted.mod Fitted model returned by fit_GL.
 #' @param N.w Number of directions sampled per posterior draw.
@@ -438,7 +438,7 @@ return_set_3d <- function(fitted.mod,alpha=0.05,conf="sim",t){
 }
 
 
-#' Title
+#' Isotropic return level-sets in three dimensions
 #'
 #' @param fitted.mod Fitted model returned by fit_GL.
 #' @param alpha Tail probability for credible bands.
@@ -488,6 +488,7 @@ return_set_3d_isotropic <- function(fitted.mod,alpha=0.05,conf="sim",t,n.MC.samp
         cnt <- cnt+1
       }
     }
+    warn_negative_isotropic_radius(post.ret.set, t[k])
 
     excurs <- simconf.mc(samples = t(post.ret.set),alpha = alpha)
     if(conf=="sim"){
@@ -819,9 +820,14 @@ get_rinfsup_3d <- function(w,x,y,z){
   }
 }
 
-#' Title
+#' Transform the observations X to a uniform inside the unit ball (3D)
 #'
 #' @param fitted.mod Fitted model returned by fit_GL.
+#' @param q Probability level of the quantile set defining the transformation.
+#'   Only used for GP/EGP fits, which are not implemented yet; must be `NULL`
+#'   for exponential fits.
+#' @param n.integration Number of Monte Carlo directions for the directional
+#'   normalising constant. Only used for GP/EGP fits; ignored for exponential fits.
 #'
 #' @return A nested list of transformed point-pattern matrices.
 #' @export

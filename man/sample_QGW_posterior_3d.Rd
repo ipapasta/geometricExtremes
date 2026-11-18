@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions_3d.R
 \name{sample_QGW_posterior_3d}
 \alias{sample_QGW_posterior_3d}
-\title{Title}
+\title{Sample directions from W and evaluate Q_q and G at these directions (3D)}
 \usage{
 sample_QGW_posterior_3d(fitted.mod, N.w)
 }
@@ -15,5 +15,5 @@ sample_QGW_posterior_3d(fitted.mod, N.w)
 A nested list of sampled directions and radial quantities.
 }
 \description{
-Title
+Sample directions from W and evaluate Q_q and G at these directions (3D)
 }

@@ -4,10 +4,17 @@
 \alias{X_to_uniform_on_Ball}
 \title{Transform the observations X to a uniform inside the unit hypersphere}
 \usage{
-X_to_uniform_on_Ball(fitted.mod)
+X_to_uniform_on_Ball(fitted.mod, q = NULL, n.integration = 16384L)
 }
 \arguments{
 \item{fitted.mod}{Object returned from the function fit_GL.}
+
+\item{q}{Probability level of the quantile set defining the transformation.
+Only used for GP/EGP fits, which are not implemented yet; must be \code{NULL}
+for exponential fits.}
+
+\item{n.integration}{Number of Monte Carlo directions for the directional
+normalising constant. Only used for GP/EGP fits; ignored for exponential fits.}
 }
 \value{
 list of samples from the transformed point process.

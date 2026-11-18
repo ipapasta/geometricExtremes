@@ -2,16 +2,23 @@
 % Please edit documentation in R/functions_3d.R
 \name{X_to_uniform_on_Ball_3d}
 \alias{X_to_uniform_on_Ball_3d}
-\title{Title}
+\title{Transform the observations X to a uniform inside the unit ball (3D)}
 \usage{
-X_to_uniform_on_Ball_3d(fitted.mod)
+X_to_uniform_on_Ball_3d(fitted.mod, q = NULL, n.integration = 16384L)
 }
 \arguments{
 \item{fitted.mod}{Fitted model returned by fit_GL.}
+
+\item{q}{Probability level of the quantile set defining the transformation.
+Only used for GP/EGP fits, which are not implemented yet; must be \code{NULL}
+for exponential fits.}
+
+\item{n.integration}{Number of Monte Carlo directions for the directional
+normalising constant. Only used for GP/EGP fits; ignored for exponential fits.}
 }
 \value{
 A nested list of transformed point-pattern matrices.
 }
 \description{
-Title
+Transform the observations X to a uniform inside the unit ball (3D)
 }

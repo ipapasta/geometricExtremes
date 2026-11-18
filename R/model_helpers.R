@@ -59,6 +59,19 @@ egp_kappa1_control <- function(alpha, interval, prior_rate) {
   )
 }
 
+# Warn when posterior draws of an isotropic return set have a negative radius
+# in some direction, i.e. the set is not valid there (typically t too large).
+# post.ret.set: draws by mesh nodes. Returns the number of offending draws.
+warn_negative_isotropic_radius <- function(post.ret.set, t) {
+  n.neg <- sum(apply(post.ret.set < 0, 1, any))
+  if (n.neg > 0)
+    warning(sprintf(paste0("%d of %d posterior draws give a negative isotropic ",
+                           "radius in some direction for t = %s; the return set ",
+                           "is not valid there."),
+                    n.neg, nrow(post.ret.set), format(t)), call. = FALSE)
+  invisible(n.neg)
+}
+
 # Surface weights for the piecewise-linear finite-element basis.
 fem_surface_weights <- function(mesh) {
   as.numeric(Matrix::colSums(fmesher::fm_fem(mesh, order=1)$c0))

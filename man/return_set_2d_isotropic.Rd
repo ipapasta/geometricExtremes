@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions_2d.R
 \name{return_set_2d_isotropic}
 \alias{return_set_2d_isotropic}
-\title{Title}
+\title{Isotropic return level-sets in two dimensions}
 \usage{
 return_set_2d_isotropic(
   fitted.mod,
@@ -27,5 +27,5 @@ return_set_2d_isotropic(
 A list of posterior isotropic return-set summaries.
 }
 \description{
-Title
+Isotropic return level-sets in two dimensions
 }

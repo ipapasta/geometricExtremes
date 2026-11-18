@@ -118,3 +118,13 @@ test_that('angular rejection sampling handles an interval without internal knots
   expect_true(all(z$w>=.01 & z$w<=.02))
   expect_equal(z$P.W_B,.01/(2*pi),tolerance=1e-10)
 })
+
+test_that('negative isotropic radii are reported once with a count', {
+  ok <- matrix(c(1,2,3, 2,3,4), nrow=2, byrow=TRUE)
+  expect_silent(n <- warn_negative_isotropic_radius(ok, 100))
+  expect_equal(n, 0)
+  bad <- rbind(ok, c(1,-0.5,2), c(-1,-1,1))
+  expect_warning(n <- warn_negative_isotropic_radius(bad, 100),
+                 '2 of 4 posterior draws give a negative isotropic radius.*t = 100')
+  expect_equal(n, 2)
+})
