@@ -103,3 +103,36 @@ test_that('fit_GL fits the radial likelihood to cluster radial maxima', {
   fQ4 <- fQ; fQ4$options$W.model <- 'M3'
   expect_warning(suppressMessages(fit_GL(fQ4, cfg, radial.idx = rm)), 'M3')
 })
+
+test_that('prob_estimation weights the radial integral by theta (eq. 11)', {
+  set.seed(31)
+  n <- 2000
+  e <- mvtnorm::rmvnorm(n, c(0, 0), matrix(c(1, .7, .7, 1), 2))
+  Y <- e
+  for (t in 2:n) Y[t, ] <- 0.8 * Y[t - 1, ] + 0.6 * e[t, ]
+  X <- rmutil::qlaplace(pnorm(Y))
+  op <- set.options(X = X, excess.dist.fam = 'E', W.model = 'M1', W.data = 'ExcOnly',
+                    use.mean.Qq = FALSE, q = 0.9, N.Qq = 2, N.GW = 3,
+                    mesh.knots.2d = seq(-pi, pi, by = pi / 32), seed = 0L)
+  cfg <- set.configs(save = FALSE, progress = FALSE)
+  fQ <- suppressMessages(fit_Qq(X, op, cfg))
+  fm <- suppressMessages(fit_GL(fQ, cfg, radial.idx = get_radial_maxima(fQ, m = 5)))
+  mk <- function(vals) list(mesh = fm$mesh, theta = lapply(vals, function(v) matrix(v, fm$mesh$n, length(v), byrow = TRUE)))
+  for (S_B in list(NA, c(0, pi / 2))) {
+    ps <- suppressMessages(sample_QGW_posterior(fm, N.w = 300, S_B = S_B))
+    base <- suppressMessages(prob_estimation(fm, ps, x_B = c(2, Inf), y_B = c(2, Inf)))
+    one <- suppressMessages(prob_estimation(fm, ps, c(2, Inf), c(2, Inf), theta.post = mk(list(rep(1, 3), rep(1, 3)))))
+    expect_identical(colnames(one), c('P', 'T'))
+    expect_identical(unname(one[, 'P']), unname(base[, 1]))
+    expect_equal(unname(one[, 'T']), 1 / unname(one[, 'P']))
+    half <- suppressMessages(prob_estimation(fm, ps, c(2, Inf), c(2, Inf), theta.post = mk(list(rep(.5, 3), rep(.5, 3)))))
+    expect_equal(half[, 'P'], 0.5 * one[, 'P'], tolerance = 1e-12)
+    vals <- list(c(.1, .2, .3, .9), c(.4, .5, .6, .9))
+    pd <- suppressMessages(prob_estimation(fm, ps, c(2, Inf), c(2, Inf), theta.post = mk(vals)))
+    expect_equal(pd[, 'P'], c(vals[[1]][1:3], vals[[2]][1:3]) * one[, 'P'], tolerance = 1e-12)
+  }
+  expect_error(prob_estimation(fm, ps, c(2, Inf), c(2, Inf), theta.post = mk(list(rep(1, 3)))), 'one element per posterior sample')
+  expect_error(prob_estimation(fm, ps, c(2, Inf), c(2, Inf), theta.post = mk(list(rep(1, 2), rep(1, 2)))), 'N.theta >= N.GW')
+  fm0 <- fm; fm0$radial.idx <- NULL
+  expect_warning(suppressMessages(prob_estimation(fm0, ps, c(2, Inf), c(2, Inf), theta.post = mk(list(rep(1, 3), rep(1, 3))))), 'radial maxima')
+})

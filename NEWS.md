@@ -1,5 +1,16 @@
 # geometricExtremes (development version)
 
+- `prob_estimation()` gains a `theta.post` argument (d = 2,
+  `excess.dist.fam = "E"`), implementing eq. (11) of the directional extremal
+  index manuscript. Given posterior samples of theta from `fit_theta()` (fitted
+  on the same `fit_Qq()` object, with `N.theta >= N.GW`), the radial integral
+  is weighted by theta at the sampled directions, pairing posterior sample j of
+  theta with posterior sample j of the geometric model for each sample of Q_q.
+  It returns posterior samples of the probability `P` that a time step is the
+  radial maximum of a cluster falling in the set, and of the return period
+  `T = 1/P` in time steps. It warns if `fitted.mod` was not fitted to cluster
+  radial maxima. With `theta.post = NULL` (default) the output is unchanged.
+
 - `fit_GL()` gains a `radial.idx` argument (d = 2, `excess.dist.fam = "E"`).
   Passing the output of `get_radial_maxima()` fits the radial likelihood to
   the cluster radial maxima only, while the directional likelihood still uses

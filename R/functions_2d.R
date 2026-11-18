@@ -553,7 +553,7 @@ get_rinfsup <- function(w,x,y,zero_in_B=FALSE){
 #' @noRd
 #'
 #' @examples
-prob_estimation_2d <- function(fitted.mod,post.sample,x,y){
+prob_estimation_2d <- function(fitted.mod,post.sample,x,y,theta.post=NULL){
   if(is_gp_excess_family(fitted.mod$options$excess.dist.fam))
     return(gp_box_probability(fitted.mod,post.sample,x,y))
 
@@ -595,6 +595,8 @@ prob_estimation_2d <- function(fitted.mod,post.sample,x,y){
         cnt <- cnt+1
         w     <- post.sample$w[[i]][[j]]
         Qq.at.w <- post.sample$Qq.at.w[[i]][[j]]
+        theta.at.w <- if(is.null(theta.post)) rep(1,length(w)) else
+          as.vector(fmesher::fm_basis(theta.post$mesh,loc=w) %*% theta.post$theta[[i]][,j])
 
         n <- length(w)
         r <- t(sapply(w,get_rinfsup,x=x,y=y,zero_in_B=zero_in_B))
@@ -612,7 +614,7 @@ prob_estimation_2d <- function(fitted.mod,post.sample,x,y){
           p_inf <- pgpd(pmax(pars[,3]-pars[,2],0),0,scale=pars[,5],shape=xi[[i]])
           p_sup <- pgpd(pmax(pars[,4]-pars[,2],0),0,scale=pars[,5],shape=xi[[i]])
         }
-        p <- sum(p_sup-p_inf)/n
+        p <- sum(theta.at.w[r[,1]>=0]*(p_sup-p_inf))/n
         post.pred.correct[cnt] <- p*(1-fitted.mod$options$q) + p.Bi
         post.pred[cnt] <- p*(1-fitted.mod$options$q)
       }
@@ -633,6 +635,8 @@ prob_estimation_2d <- function(fitted.mod,post.sample,x,y){
         cnt <- cnt+1
         w     <- post.sample$w[[i]][[j]]
         Qq.at.w <- post.sample$Qq.at.w[[i]][[j]]
+        theta.at.w <- if(is.null(theta.post)) rep(1,length(w)) else
+          as.vector(fmesher::fm_basis(theta.post$mesh,loc=w) %*% theta.post$theta[[i]][,j])
         P.W_B <- post.sample$P.W_B[[i]][[j]]
 
         r <- t(sapply(w,get_rinfsup,x=x,y=y,zero_in_B=zero_in_B))
@@ -650,13 +654,17 @@ prob_estimation_2d <- function(fitted.mod,post.sample,x,y){
           p_inf <- pgpd(pmax(pars[,3]-pars[,2],0),0,scale=pars[,5],shape=xi[[i]])
           p_sup <- pgpd(pmax(pars[,4]-pars[,2],0),0,scale=pars[,5],shape=xi[[i]])
         }
-        p <- mean(p_sup-p_inf)#sum(p_inf-p_sup)/n
+        p <- mean(theta.at.w[r[,1]>=0]*(p_sup-p_inf))#sum(p_inf-p_sup)/n
         post.pred.correct[cnt] <- p*P.W_B*(1-fitted.mod$options$q) + p.Bi
         post.pred[cnt] <- p*P.W_B*(1-fitted.mod$options$q)
       }
     }
   }
-  cbind(post.pred,post.pred.correct)
+  if(is.null(theta.post)){
+    cbind(post.pred,post.pred.correct)
+  }else{
+    cbind(P=post.pred,T=1/post.pred)
+  }
 }
 
 #' Title

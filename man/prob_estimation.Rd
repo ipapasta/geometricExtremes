@@ -4,7 +4,7 @@
 \alias{prob_estimation}
 \title{Probability estimation}
 \usage{
-prob_estimation(fitted.mod, post.sample, x_B, y_B)
+prob_estimation(fitted.mod, post.sample, x_B, y_B, theta.post = NULL)
 }
 \arguments{
 \item{fitted.mod}{Object returned from the function fit_GL.}
@@ -14,6 +14,8 @@ prob_estimation(fitted.mod, post.sample, x_B, y_B)
 \item{x_B}{x-component of the rectangular set B of interest.}
 
 \item{y_B}{y-component of the rectangular set B of interest.}
+
+\item{theta.post}{Optional object returned by the function fit_theta, fitted on the same fit_Qq object, with N.theta >= N.GW. If given, returns posterior samples of the probability that a time step is the radial maximum of a cluster of exceedances falling in B (P) and of the return period 1/P in time steps (T).}
 }
 \value{
 Vector of posterior samples for the probability that a new observation falls in B.

@@ -475,6 +475,7 @@ sample_QGW_posterior <- function(fitted.mod,N.w,S_B=NA,transf.G=FALSE){
 #' @param post.sample Object returned from the function sample_QGW_posterior.
 #' @param x_B x-component of the rectangular set B of interest.
 #' @param y_B y-component of the rectangular set B of interest.
+#' @param theta.post Optional object returned by the function fit_theta, fitted on the same fit_Qq object, with N.theta >= N.GW. If given, returns posterior samples of the probability that a time step is the radial maximum of a cluster of exceedances falling in B (P) and of the return period 1/P in time steps (T).
 #'
 #' @import INLA
 #' @import inlabru
@@ -483,12 +484,24 @@ sample_QGW_posterior <- function(fitted.mod,N.w,S_B=NA,transf.G=FALSE){
 #' @export
 #'
 #' @examples
-prob_estimation <- function(fitted.mod,post.sample,x_B,y_B){
+prob_estimation <- function(fitted.mod,post.sample,x_B,y_B,theta.post=NULL){
   # if(fitted.mod$options$excess.dist.fam=="GP"){
   #   stop("GP exceedances probabilities not yet implemented")
   # }
+  if(!is.null(theta.post)){
+    if(ncol(fitted.mod$X)!=2)
+      stop("theta.post is not implemented yet for d=3.")
+    if(fitted.mod$options$excess.dist.fam!="E")
+      stop("theta.post is only implemented for excess.dist.fam='E'.")
+    if(length(theta.post$theta)!=length(fitted.mod$G))
+      stop("theta.post must have one element per posterior sample of Q_q used by fit_GL; fit it with get_filtered_Z() and fit_theta() on the same fit_Qq object and use.mean.Qq.")
+    if(!all(vapply(theta.post$theta,function(x) is.matrix(x) && ncol(x)>=length(fitted.mod$G[[1]]),logical(1))))
+      stop("theta.post must contain at least N.GW posterior samples of theta (N.theta >= N.GW) for each posterior sample of Q_q.")
+    if(is.null(fitted.mod$radial.idx))
+      warning("fitted.mod was not fitted to cluster radial maxima (radial.idx = NULL); the radial scale is that of all exceedances.", call.=FALSE)
+  }
   if(ncol(fitted.mod$X)==2){
-    p.post <- prob_estimation_2d(fitted.mod,post.sample,x_B,y_B)
+    p.post <- prob_estimation_2d(fitted.mod,post.sample,x_B,y_B,theta.post)
   }else if(ncol(fitted.mod$X)>2){
     stop("Not yet implemented for d > 2.")
   }else{
